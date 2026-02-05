@@ -34,6 +34,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-out/
+
 .env
 build
+
+.agent
+.agents
+.claude
+.gemini
+.github
+.opencode
+.opencode-agent
