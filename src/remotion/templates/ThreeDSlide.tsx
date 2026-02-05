@@ -4,7 +4,7 @@ import React, { useRef } from "react";
 import { interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import * as THREE from "three";
 
-export type ThreeDShape = "cube" | "sphere" | "pyramid" | "torus";
+export type ThreeDShape = "cube" | "sphere" | "pyramid" | "torus" | "cylinder";
 
 export interface ThreeDSlideProps {
   title?: string;
@@ -44,6 +44,8 @@ const AnimatedShape: React.FC<ShapeProps> = ({ shape, color, progress }) => {
         return <coneGeometry args={[1.2, 2, 4]} />;
       case "torus":
         return <torusGeometry args={[1, 0.4, 16, 48]} />;
+      case "cylinder":
+        return <cylinderGeometry args={[1, 1, 2, 32]} />;
       default:
         return <boxGeometry args={[2, 2, 2]} />;
     }

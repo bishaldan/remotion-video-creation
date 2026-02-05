@@ -12,8 +12,8 @@ export const defaultMyCompProps: z.infer<typeof CompositionProps> = {
 };
 
 export const DURATION_IN_FRAMES = 200;
-export const VIDEO_WIDTH = 1280;
-export const VIDEO_HEIGHT = 720;
+export const VIDEO_WIDTH = 1920;
+export const VIDEO_HEIGHT = 1080;
 export const VIDEO_FPS = 30;
 
 // Educational Video schemas
@@ -69,7 +69,7 @@ export const DiagramSlideSchema = z.object({
 export const ThreeDSlideSchema = z.object({
   type: z.literal("threeD"),
   title: z.string().optional(),
-  shape: z.enum(["cube", "sphere", "pyramid", "torus"]).default("cube"),
+  shape: z.enum(["cube", "sphere", "pyramid", "torus", "cylinder"]).default("cube"),
   color: z.string().optional(),
   backgroundColor: z.string().optional(),
   durationInSeconds: z.number().default(5),

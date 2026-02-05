@@ -1,8 +1,10 @@
 "use client";
 
 import { Player } from "@remotion/player";
+import canvasConfetti from "canvas-confetti";
 import type { NextPage } from "next";
 import { useCallback, useMemo, useState } from "react";
+import toast from "react-hot-toast";
 import {
   defaultEduCompProps,
   EDU_COMP_NAME,
@@ -55,6 +57,8 @@ const Home: NextPage = () => {
       }
 
       setTimeline(parsed.data);
+      toast.success("Video generated successfully!");
+      canvasConfetti();
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
