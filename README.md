@@ -2,13 +2,11 @@
 
 Build dynamic, AI-powered educational videos using Next.js and Remotion. This project leverages Google's Gemini AI to generate video scripts from simple text prompts or PDF documents and renders them into high-quality videos with 3D animations and markdown-rich text.
 
-https://github.com/user-attachments/assets/c9c2e5ca-2637-4ec8-8e40-a8feb5740d88
-
 ## 📹 Sample Output
 
 Check out a sample generated video:
 
-[Sample Educational Video](./out/render-1770373808361-zko08m.mp4)
+[Sample Educational Video](./public/render-1770376052292-u0ga0p.mp4)
 
 ## 🚀 Features
 

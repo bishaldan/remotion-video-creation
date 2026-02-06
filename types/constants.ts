@@ -114,7 +114,7 @@ export const defaultEduCompProps: Timeline = {
       type: "text",
       text: "Welcome to Educational Videos",
       animation: "wordByWord",
-      durationInSeconds: 4,
+      durationInSeconds: 2,
     },
     {
       type: "bullets",
@@ -123,8 +123,9 @@ export const defaultEduCompProps: Timeline = {
         "Create animated presentations",
         "Use dynamic templates",
         "Generate videos from prompts",
+        "Generate videos from single uploaded pdf",
       ],
-      durationInSeconds: 5,
+      durationInSeconds: 3,
     },
   ],
 };
