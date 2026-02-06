@@ -2,9 +2,9 @@ import React from "react";
 import { AbsoluteFill, Sequence } from "remotion";
 import { z } from "zod";
 import {
-    TimelineSchema,
-    VIDEO_FPS,
-    type Slide,
+  TimelineSchema,
+  VIDEO_FPS,
+  type Slide,
 } from "../../../types/constants";
 import { BulletSlide } from "../templates/BulletSlide";
 import { DiagramSlide } from "../templates/DiagramSlide";
@@ -53,6 +53,8 @@ export const EduMain: React.FC<z.infer<typeof TimelineSchema>> = ({
         return (
           <ThreeDSlide
             title={slide.title}
+            objects={slide.objects}
+            cameraPosition={slide.cameraPosition}
             shape={slide.shape}
             color={slide.color}
             backgroundColor={slide.backgroundColor}

@@ -1,89 +1,123 @@
-<img src="https://github.com/remotion-dev/template-next/assets/1629785/9092db5f-7c0c-4d38-97c4-5f5a61f5cc098" />
-<br/>
-<br/>
+# Educational Video Generator (SaaS)
 
-This is a Next.js template for building programmatic video apps, with [`@remotion/player`](https://remotion.dev/player) and [`@remotion/lambda`](https://remotion.dev/lambda) built in.
+Build dynamic, AI-powered educational videos using Next.js and Remotion. This project leverages Google's Gemini AI to generate video scripts from simple text prompts and renders them into high-quality videos with 3D animations and markdown-rich text.
 
-This template uses the Next.js App directory, with TailwindCSS. There is a [Non-TailwindCSS version](https://github.com/remotion-dev/template-next-app-dir), and a [Pages directory version](https://github.com/remotion-dev/template-next-pages-dir) of this template available.
+<img src="https://github.com/remotion-dev/template-next/assets/1629785/c9c2e5ca-2637-4ec8-8e40-a8feb5740d88" width="600" alt="Remotion Template Preview" />
 
-<img src="https://github.com/remotion-dev/template-next/assets/1629785/c9c2e5ca-2637-4ec8-8e40-a8feb5740d88" />
+## 🚀 Features
 
-## Getting Started
+-   **AI-Powered Content**: Enter a topic (e.g., "The Solar System"), and Gemini AI generates a complete video script with scenes, narration, and visuals.
+-   **3D Animations**: Integrated **React Three Fiber** for rendering 3D models (Atoms, Planets, Geometries) directly in the video.
+-   **Markdown Support**: Text slides support bolding (`**text**`) and other formatting for professional typography.
+-   **Dynamic Templates**: Includes Bullet Points, Text Overlays, Diagram, and 3D Slide templates.
+-   **Cloud Ready**: Pre-configured for serverless rendering on AWS Lambda via Remotion Lambda.
 
-[Use this template](https://github.com/new?template_name=template-next-app-dir-tailwind&template_owner=remotion-dev) to clone it into your GitHub account. Run
+## 🛠️ Tech Stack
 
+-   **Framework**: [Next.js 14](https://nextjs.org/) (App Directory)
+-   **Video Engine**: [Remotion](https://www.remotion.dev/)
+-   **AI Model**: [Google Gemini Pro](https://ai.google.dev/)
+-   **3D Engine**: [React Three Fiber](https://docs.pmnd.rs/react-three-fiber) & [Drei](https://github.com/pmndrs/drei)
+-   **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+
+---
+
+## 🏁 Getting Started
+
+### 1. Prerequisites
+
+-   Node.js 18+
+-   NPM or Yarn
+-   A [Google AI Studio](https://aistudio.google.com/) API Key.
+
+### 2. Installation
+
+Clone the repository and install dependencies:
+
+```bash
+git clone <your-repo-url>
+cd next-saas
+npm install
 ```
-npm i
+
+### 3. Environment Setup
+
+Create a `.env.local` file in the root directory and add your Google Gemini API key:
+
+```bash
+# .env.local
+GOOGLE_GENERATIVE_AI_API_KEY=your_api_key_here
 ```
 
-afterwards. Alternatively, use this command to scaffold a project:
+### 4. Run Development Server
 
-```
-npx create-video@latest --next-tailwind
-```
+Start the Next.js development server. This opens the UI where you can input prompts and preview the video player.
 
-## Commands
-
-Start the Next.js dev server:
-
-```
+```bash
 npm run dev
 ```
 
-Open the Remotion Studio:
+Visit `http://localhost:3000` to see the app.
 
-```
-npx remotion studio
-```
+---
 
-Render a video locally:
+## 🎥 Usage Guide
 
-```
+### Generating a Video
+1.  Open the dashboard at `http://localhost:3000`.
+2.  In the prompt box, type a topic (e.g., *"Explain the Pythagorean theorem"*).
+3.  Click **"Generate Video"**.
+4.  The AI will plan the scenes, drafting text, bullet points, and even 3D object properties.
+5.  Watch the preview in real-time!
+
+### 3D Slides Customization
+The `ThreeDSlide` component supports various shapes and animations:
+-   **Shapes**: `sphere`, `cube`, `pyramid`, `torus`, `cylinder`.
+-   **Animations**: `orbit` (solar system style), `rotate`, `float`, `pulse`.
+-   **Note**: Spheres have `pulse` animation disabled by design to keep atoms/planets stable.
+
+### Text Formatting
+All text inputs support basic markdown. Use double asterisks to bold key terms:
+> `**Photosynthesis** is the process by which...`  
+> Renders as: **Photosynthesis** is the process by which...
+
+---
+
+## 📦 Deployment & Rendering
+
+### Local Rendering
+To render a video to an MP4 file on your machine:
+
+```bash
 npx remotion render
 ```
 
-Upgrade Remotion:
+### Remotion Studio
+To fine-tune animations frame-by-frame:
 
-```
-npx remotion upgrade
-```
-
-The following script will set up your Remotion Bundle and Lambda function on AWS:
-
-```
-node deploy.mjs
+```bash
+npx remotion studio
 ```
 
-You should run this script after:
+### AWS Lambda Rendering
+This project is set up for scalable cloud rendering.
 
-- changing the video template
-- changing `config.mjs`
-- upgrading Remotion to a newer version
+1.  Configure your AWS credentials in `.env`.
+2.  Deploy the function:
+    ```bash
+    node deploy.mjs
+    ```
+3.  Trigger renders via the API or CLI.
 
-## Set up rendering on AWS Lambda
+---
 
-This template supports rendering the videos via [Remotion Lambda](https://remotion.dev/lambda).
+## 🤝 Contributing
 
-1. Copy the `.env.example` file to `.env` and fill in the values.
-   Complete the [Lambda setup guide](https://www.remotion.dev/docs/lambda/setup) to get your AWS credentials.
+1.  Fork the repository.
+2.  Create a feature branch (`git checkout -b feature/amazing-feature`).
+3.  Commit your changes.
+4.  Open a Pull Request.
 
-1. Edit the `config.mjs` file to your desired Lambda settings.
+## 📄 License
 
-1. Run `node deploy.mjs` to deploy your Lambda function and Remotion Bundle.
-
-## Docs
-
-Get started with Remotion by reading the [fundamentals page](https://www.remotion.dev/docs/the-fundamentals).
-
-## Help
-
-We provide help on our [Discord server](https://remotion.dev/discord).
-
-## Issues
-
-Found an issue with Remotion? [File an issue here](https://remotion.dev/issue).
-
-## License
-
-Note that for some entities a company license is needed. [Read the terms here](https://github.com/remotion-dev/remotion/blob/main/LICENSE.md).
-# Remotion-Saas
+This project is built on the [Remotion Next.js Template](https://github.com/remotion-dev/template-next). Check [Remotion's License](https://github.com/remotion-dev/remotion/blob/main/LICENSE.md) for commercial usage terms.

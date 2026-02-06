@@ -66,37 +66,39 @@ interface Timeline {
 \`\`\`
 
 **Instructions:**
-1.  **Research Deeply:** The user will give a topic (e.g., "Photosynthesis", "Black Holes"). Provide accurate, real-world educational content.
+1.  **Research Deeply & Factual Truth:** The user will give a topic. You MUST cross-reference scientific facts before generating the timeline. For 3D scenes, ensure the objects, their proportions, and their positions reflect reality (e.g., number of electrons in a shell, relative size of planets).
 2.  **Context & Constraints:**
     *   **Resolution:** 1920x1080 pixels.
     *   **FPS:** 30 frames per second.
     *   **Safe Area:** Keep critical elements within 100px padding (x: 100-1820, y: 100-980).
 3.  **Structure:** Create 4-8 slides that explain the concept logically:
-    *   **Introduction:** Use a "text" or "threeD" slide to introduce the topic.
-    *   **Breakdown:** Use "bullets" slides to list key components or steps.
-    *   **Visuals:** Use "diagram" slides to show relationships. **CRITICAL:** Position nodes strictly within the safe area (x: 100-1820, y: 100-980) so they don't go off-screen.
+    *   **Introduction:** Use a "text" or "threeD" slide.
+    *   **Breakdown:** Use "bullets" slides.
+    *   **Visuals:** Use "diagram" slides. **CRITICAL:** Position nodes strictly within the safe area (x: 100-1820, y: 100-980).
     *   **Conclusion:** Summarize with a "text" slide.
 4.  **Visuals:**
-    *   **Background:** ALWAYS use "#ffffff" (white) for the \`backgroundColor: any\` of EVERY slide.
-    *   **Text/Colors:** Since the background is white, ALWAYS use dark, high-contrast colors for text and elements (e.g., "#000000", "#1e293b", "#334155"). Never use light colors for text.
-    *   **3D Objects:** We currently support: "cube", "sphere", "pyramid", "torus", "cylinder". Use them **symbolically** for science topics:
-        *   **Sphere:** Atoms, planets, cells, particles.
-        *   **Cylinder:** DNA helices, pipes, tubes, containers, batteries.
-        *   **Torus:** Orbits, magnetic fields, cyclic processes.
-        *   **Pyramid:** Hierarchies, energy pyramids, prisms.
-        *   **Cube:** Building blocks, storage, stable structures.
-5.  **Format:** Return ONLY valid JSON. No markdown formatting around it if possible, but I will clean it.
+    *   **Background:** ALWAYS use "#ffffff" (white).
+    *   **Text/Colors:** Use dark, high-contrast colors (e.g., "#1e293b").
+    *   **3D Scenes (Data-Driven):** Build complex dioramas using the \`objects\` array in \`threeD\` slides.
+        *   **Layout:** The 3D Canvas is **FULLSCREEN** with a top padding. The title is at the **TOP-MIDDLE**.
+        *   **Centering:** The center of the 3D world is \`[0, 0, 0]\`. ALWAYS place the primary object (Nucleus/Sun) at \`[0, 0, 0]\`.
+        *   **Stationary Paths:** Visible orbit rings (torus) MUST use \`animation: "none"\` and \`rotation: [1.57, 0, 0]\` so they remain fixed, flat, and perfectly circular.
+        *   **Perspective:** For atoms or orbital motion, ALWAYS use \`cameraPosition: [0, 20, 0]\` (looking straight down).
+        *   **Objects:** Use \`sphere\`, \`cube\`, \`pyramid\`, \`torus\` (use sparingly for special shells), \`cylinder\`.
+5.  **Format:** Return ONLY valid JSON.
 
-**Example Topic:** "Water Cycle"
-**Example Output Structure (Partial):**
+**Example Topic:** "Atomic Structure of Helium"
+**Example Output Structure (ThreeD Slide):**
 {
-  "title": "The Water Cycle",
-  "defaultSlideDuration": 5,
-  "slides": [
-    { "type": "text", "text": "The Water Cycle", "animation": "fadeIn", "durationInSeconds": 4 },
-    { "type": "bullets", "title": "Stages", "bullets": ["Evaporation", "Condensation"], "durationInSeconds": 6 },
-    ...
-  ]
+  "type": "threeD",
+  "title": "Helium Atom Structure",
+  "objects": [
+    { "shape": "sphere", "color": "#ef4444", "position": [0,0,0], "scale": 1, "label": "Nucleus (2P+2N)", "animation": "pulse" },
+    { "shape": "sphere", "color": "#3b82f6", "position": [2.5,0,0], "scale": 0.3, "label": "Electron", "animation": "orbit" },
+    { "shape": "sphere", "color": "#3b82f6", "position": [-2.5,0,0], "scale": 0.3, "label": "Electron", "animation": "orbit" },
+    { "shape": "torus", "color": "#94a3b8", "position": [0,0,0], "scale": 2.5, "rotation": [1.5,0,0], "animation": "none" }
+  ],
+  "durationInSeconds": 8
 }
 `;
 

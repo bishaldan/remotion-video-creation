@@ -85,7 +85,7 @@ const Home: NextPage = () => {
             htmlFor="prompt"
             className="block text-sm font-medium text-slate-300 mb-2"
           >
-            Enter your topic or concept (Right now the animations are hardcoded json format, Only 3 mentioned below work for now. Would need to implement a way to generate these json format based on the prompt through AI)
+            Enter your topic or concept 
           </label>
           <textarea
             id="prompt"
