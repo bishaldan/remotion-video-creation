@@ -1,5 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest, NextResponse } from "next/server";
+import { extractPDFContent } from "../../../lib/pdf-extractor";
+import { buildPrompt } from "../../../lib/prompt-builder";
 
 // Simple sanitization to handle potential Markdown code blocks in response
 const cleanJsonResponse = (text: string): string => {
@@ -104,16 +106,83 @@ interface Timeline {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { prompt } = body;
+    const contentType = request.headers.get("content-type") || "";
+    
+    let prompt: string;
+    let pdfText: string | undefined;
+    let pdfMetadata: { title?: string; pageCount: number } | undefined;
+    
+    // Check if request contains FormData (PDF upload)
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await request.formData();
+      const pdfFile = formData.get("pdf") as File | null;
+      const userPrompt = formData.get("prompt") as string | null;
+      
+      // Validate that either PDF or prompt is provided
+      if (!pdfFile && !userPrompt) {
+        return NextResponse.json(
+          { error: "Please provide either a PDF file or text prompt" },
+          { status: 400 }
+        );
+      }
+      
+      // If PDF is present, extract its content
+      if (pdfFile) {
+        // File size validation (10MB = 10 * 1024 * 1024 bytes)
+        const MAX_FILE_SIZE = 10 * 1024 * 1024;
+        if (pdfFile.size > MAX_FILE_SIZE) {
+          return NextResponse.json(
+            { error: "File size exceeds 10MB limit" },
+            { status: 400 }
+          );
+        }
+        
+        // Convert File to ArrayBuffer for processing
+        const arrayBuffer = await pdfFile.arrayBuffer();
+        
+        // Extract PDF content
+        try {
+          const extractedContent = await extractPDFContent(arrayBuffer);
+          pdfText = extractedContent.text;
+          pdfMetadata = {
+            title: extractedContent.metadata.title,
+            pageCount: extractedContent.metadata.pageCount,
+          };
+        } catch (extractionError) {
+          console.error("PDF extraction error:", extractionError);
+          const errorMessage = extractionError instanceof Error 
+            ? extractionError.message 
+            : "Failed to extract PDF content";
+          return NextResponse.json(
+            { error: errorMessage },
+            { status: 400 }
+          );
+        }
+      }
+      
+      // Build prompt using the prompt builder utility
+      prompt = buildPrompt({
+        pdfText,
+        pdfMetadata,
+        userPrompt: userPrompt || undefined,
+      });
+    } else {
+      // Handle JSON request (backward compatibility for text-only mode)
+      const body = await request.json();
+      const userPrompt = body.prompt;
 
-    if (!prompt || typeof prompt !== "string") {
-      return NextResponse.json(
-        { error: "Prompt is required" },
-        { status: 400 }
-      );
+      if (!userPrompt || typeof userPrompt !== "string") {
+        return NextResponse.json(
+          { error: "Prompt is required" },
+          { status: 400 }
+        );
+      }
+      
+      // Build prompt for text-only mode
+      prompt = buildPrompt({ userPrompt });
     }
 
+    // GEMINI API AI RESPONSE TIMELINE GENERATION
     const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
@@ -127,7 +196,7 @@ export async function POST(request: NextRequest) {
 
     const result = await model.generateContent([
       SYSTEM_PROMPT,
-      `Create an educational video timeline for the topic: "${prompt}"`,
+      prompt,
     ]);
 
     const response = await result.response;

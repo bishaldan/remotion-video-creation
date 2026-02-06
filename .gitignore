@@ -11,6 +11,8 @@
 # next.js
 /.next/
 /out/
+# Allow one sample video for README
+!/out/render-1770373808361-zko08m.mp4
 
 # production
 /build

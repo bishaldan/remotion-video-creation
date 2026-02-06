@@ -22,16 +22,78 @@ const Home: NextPage = () => {
   const [prompt, setPrompt] = useState<string>("");
   const [timeline, setTimeline] = useState<Timeline>(defaultEduCompProps);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [uploadMode, setUploadMode] = useState<"prompt" | "pdf">("prompt");
 
   const durationInFrames = useMemo(
     () => calculateTimelineDuration(timeline.slides, VIDEO_FPS),
     [timeline]
   );
 
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleFileSelect = useCallback((file: File | null) => {
+    if (!file) {
+      // Switching back to prompt mode - clear PDF state
+      setPdfFile(null);
+      setUploadMode("prompt");
+      setError(null);
+      return;
+    }
+
+    // Validate file type
+    if (file.type !== "application/pdf") {
+      setError("Please select a valid PDF file");
+      setPdfFile(null);
+      setUploadMode("prompt");
+      return;
+    }
+
+    // Validate file size (10MB limit)
+    const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+    if (file.size > maxSize) {
+      setError("File size exceeds 10MB limit");
+      setPdfFile(null);
+      setUploadMode("prompt");
+      return;
+    }
+
+    // File is valid - switch to PDF mode and clear prompt
+    setPdfFile(file);
+    setUploadMode("pdf");
+    setPrompt(""); // Clear previous prompt when switching to PDF mode
+    setError(null);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      handleFileSelect(files[0]);
+    }
+  }, [handleFileSelect]);
+
   const handleGenerate = useCallback(async () => {
-    if (!prompt.trim()) {
-      setError("Please enter a prompt");
+    // Validate that either PDF or prompt is provided
+    if (!pdfFile && !prompt.trim()) {
+      setError("Please upload a PDF or enter a prompt");
       return;
     }
 
@@ -39,32 +101,118 @@ const Home: NextPage = () => {
     setError(null);
 
     try {
-      const response = await fetch("/api/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
-      });
+      let response: Response;
+
+      // Check if PDF file is present
+      if (pdfFile) {
+        // Set loading message for PDF extraction
+        setLoadingMessage("Extracting PDF content...");
+        
+        // Create FormData for PDF upload
+        const formData = new FormData();
+        
+        try {
+          // Handle file read errors - verify file is still accessible
+          if (!pdfFile.size || pdfFile.size === 0) {
+            throw new Error("The selected PDF file is empty or unreadable");
+          }
+          
+          formData.append("pdf", pdfFile);
+          
+          // Append text prompt if provided (as supplementary context)
+          if (prompt.trim()) {
+            formData.append("prompt", prompt.trim());
+          }
+        } catch (fileError) {
+          // Handle file read errors
+          throw new Error(
+            fileError instanceof Error 
+              ? fileError.message
+              : "Failed to read PDF file. Please try selecting the file again."
+          );
+        }
+
+        // Send FormData (no Content-Type header - browser sets it with boundary)
+        // Note: PDF extraction happens on server, then AI generation
+        try {
+          response = await fetch("/api/generate", {
+            method: "POST",
+            body: formData,
+          });
+        } catch {
+          // Handle network errors specifically for PDF upload
+          throw new Error(
+            "Network error during PDF upload. Please check your connection and try again."
+          );
+        }
+        
+        // Update loading message to generation phase after extraction completes
+        setLoadingMessage("Generating video timeline...");
+      } else {
+        // Set loading message for generation
+        setLoadingMessage("Generating video timeline...");
+        
+        // Maintain JSON request for text-only mode (backward compatibility)
+        try {
+          response = await fetch("/api/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt }),
+          });
+        } catch {
+          // Handle network errors for text prompt
+          throw new Error(
+            "Network error. Please check your connection and try again."
+          );
+        }
+      }
 
       if (!response.ok) {
-        throw new Error("Failed to generate timeline");
+        // Display error messages from API
+        let errorMessage = "Failed to generate timeline";
+        
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // If we can't parse the error response, use status-based messages
+          if (response.status === 400) {
+            errorMessage = "Invalid request. Please check your input and try again.";
+          } else if (response.status === 413) {
+            errorMessage = "File size too large. Please use a smaller PDF file.";
+          } else if (response.status === 500) {
+            errorMessage = "Server error. Please try again later.";
+          } else if (response.status === 503) {
+            errorMessage = "Service temporarily unavailable. Please try again later.";
+          }
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
       const parsed = TimelineSchema.safeParse(data.timeline);
 
       if (!parsed.success) {
-        throw new Error("Invalid timeline format");
+        throw new Error("Invalid timeline format received from server");
       }
 
       setTimeline(parsed.data);
       toast.success("Video generated successfully!");
       canvasConfetti();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      // Handle all errors with appropriate messages
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
+      console.error("Generation error:", err);
     } finally {
       setIsGenerating(false);
+      setLoadingMessage("");
     }
-  }, [prompt]);
+  }, [prompt, pdfFile]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -81,18 +229,151 @@ const Home: NextPage = () => {
 
         {/* Prompt Input Section */}
         <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-8">
+          {/* PDF Upload Section */}
+          <div className="mb-6">
+            <label
+              htmlFor="pdf-upload"
+              className="block text-sm font-medium text-slate-300 mb-2"
+            >
+              Upload PDF Document (Optional)
+            </label>
+            <div className="space-y-3">
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`flex items-center gap-3 transition-all duration-200 ${
+                  isDragging ? "scale-[1.02]" : ""
+                }`}
+              >
+                <label
+                  htmlFor="pdf-upload"
+                  className="flex-1 cursor-pointer"
+                >
+                  <div
+                    className={`flex items-center justify-center gap-2 px-4 py-3 bg-white/5 border rounded-xl text-slate-400 transition-all duration-200 ${
+                      isDragging
+                        ? "border-purple-500 bg-purple-500/10 scale-[1.02]"
+                        : "border-white/10 hover:bg-white/10 hover:border-purple-500/50"
+                    }`}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                      />
+                    </svg>
+                    <span className="text-sm">
+                      {isDragging
+                        ? "Drop PDF here"
+                        : pdfFile
+                          ? "Change PDF"
+                          : "Choose PDF File or Drag & Drop"}
+                    </span>
+                  </div>
+                  <input
+                    id="pdf-upload"
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      handleFileSelect(file);
+                    }}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              {/* Display selected file info */}
+              {pdfFile && (
+                <div className="flex items-center justify-between px-4 py-3 bg-purple-500/10 border border-purple-500/30 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 text-purple-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                    <div>
+                      <p className="text-sm font-medium text-white">
+                        {pdfFile.name}
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        {(pdfFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleFileSelect(null)}
+                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                    aria-label="Remove PDF"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 text-slate-400 hover:text-red-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Divider */}
+          {pdfFile && (
+            <div className="flex items-center gap-3 mb-6">
+              <div className="flex-1 h-px bg-white/10"></div>
+              <span className="text-xs text-slate-500 uppercase tracking-wider">
+                Or add context
+              </span>
+              <div className="flex-1 h-px bg-white/10"></div>
+            </div>
+          )}
+
           <label
             htmlFor="prompt"
             className="block text-sm font-medium text-slate-300 mb-2"
           >
-            Enter your topic or concept 
+            {uploadMode === "pdf" 
+              ? "Additional Context (Optional)" 
+              : "Enter your topic or concept"}
           </label>
+
           <textarea
             id="prompt"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="e.g. water cycle, photosynthesis, machine learning..."
-            className="w-full h-32 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+            placeholder={
+              uploadMode === "pdf"
+                ? "Add supplementary context for the PDF (optional)"
+                : "e.g. water cycle, photosynthesis, machine learning..."
+            }
+            className="w-full h-32 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none disabled:opacity-50 disabled:cursor-not-allowed"
           />
           <div className="flex items-center justify-between mt-4">
             {error && <p className="text-red-400 text-sm">{error}</p>}
@@ -123,7 +404,7 @@ const Home: NextPage = () => {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     />
                   </svg>
-                  Generating...
+                  {loadingMessage || "Generating..."}
                 </>
               ) : (
                 "Generate Video"
@@ -180,7 +461,7 @@ const Home: NextPage = () => {
         {/* Render Controls */}
         <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
           <h2 className="text-xl font-semibold text-white mb-4">
-            Export Video
+            Export Video 
           </h2>
           <LocalRenderControls
             compositionId={EDU_COMP_NAME}

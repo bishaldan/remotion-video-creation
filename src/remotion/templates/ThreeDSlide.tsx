@@ -164,14 +164,9 @@ export const ThreeDSlide: React.FC<ThreeDSlideProps> = ({
   backgroundColor = "#ffffff",
 }) => {
   const frame = useCurrentFrame();
-  const { fps, durationInFrames } = useVideoConfig();
+  const { durationInFrames } = useVideoConfig();
 
   const progress = frame / durationInFrames;
-
-  // Title animation
-  const titleOpacity = interpolate(frame, [0, fps * 0.3], [0, 1], {
-    extrapolateRight: "clamp",
-  });
 
   // Backward compatibility: if no objects array, use the single shape props
   const finalObjects: ThreeDObject[] = objects || [

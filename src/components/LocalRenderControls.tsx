@@ -30,15 +30,16 @@ export const LocalRenderControls: React.FC<{
           <span className="whitespace-nowrap">Save as:</span>
           <input 
             type="text" 
-            placeholder="Save as..." 
+            placeholder="Enter a name for your video" 
             value={saveAs} 
             onChange={(e) => setSaveAs(e.target.value)}
-            className="flex-1 min-w-0"
+            className="flex-1 min-w-0 border border-slate-700 rounded px-2 py-1"
+            required
           />
         </label>
 
         <Button
-          disabled={state.status === "invoking"}
+          disabled={state.status === "invoking" || saveAs === ""}
           loading={state.status === "invoking"}
           onClick={renderMedia}
         >
@@ -71,7 +72,7 @@ export const LocalRenderControls: React.FC<{
         <div>
           <p className="text-green-400 font-medium">Render Complete!</p>
           <p className="text-slate-400 text-sm">
-            Saved to: <code className="bg-slate-800 px-1 rounded">{state.outputPath}</code>
+            Saved to: <code className="bg-slate-800 px-1 rounded">{state.outputPath}. Click Download Video to download the video</code>
           </p>
         </div>
       </div>
