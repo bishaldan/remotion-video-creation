@@ -12,8 +12,8 @@ export const defaultMyCompProps: z.infer<typeof CompositionProps> = {
 };
 
 export const DURATION_IN_FRAMES = 200;
-export const VIDEO_WIDTH = 1280;
-export const VIDEO_HEIGHT = 720;
+export const VIDEO_WIDTH = 1920;
+export const VIDEO_HEIGHT = 1080;
 export const VIDEO_FPS = 30;
 
 // Educational Video schemas
@@ -66,10 +66,25 @@ export const DiagramSlideSchema = z.object({
   durationInSeconds: z.number().default(6),
 });
 
+export const ThreeDObjectSchema = z.object({
+  shape: z.enum(["cube", "sphere", "pyramid", "torus", "cylinder"]),
+  position: z.tuple([z.number(), z.number(), z.number()]).default([0, 0, 0]),
+  scale: z.number().default(1),
+  color: z.string().default("#6366f1"),
+  label: z.string().optional(),
+  rotation: z.tuple([z.number(), z.number(), z.number()]).default([0, 0, 0]),
+  showTrajectory: z.boolean().default(true),
+  orbitSpeed: z.number().optional(),
+  animation: z.enum(["none", "orbit", "pulse", "float", "rotate"]).default("none"),
+});
+
 export const ThreeDSlideSchema = z.object({
   type: z.literal("threeD"),
   title: z.string().optional(),
-  shape: z.enum(["cube", "sphere", "pyramid", "torus"]).default("cube"),
+  objects: z.array(ThreeDObjectSchema).optional(),
+  cameraPosition: z.tuple([z.number(), z.number(), z.number()]).optional(),
+  // Keeping these for backward compatibility or simple slides
+  shape: z.enum(["cube", "sphere", "pyramid", "torus", "cylinder"]).optional(),
   color: z.string().optional(),
   backgroundColor: z.string().optional(),
   durationInSeconds: z.number().default(5),

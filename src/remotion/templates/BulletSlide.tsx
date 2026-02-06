@@ -45,6 +45,21 @@ export const BulletSlide: React.FC<BulletSlideProps> = ({
   const bulletsStartFrame = titleDuration;
   const bulletAnimDuration = (durationInFrames - bulletsStartFrame) / bullets.length;
 
+  // Helper to parse **bold** markdown
+  const renderTextWithMarkdown = (text: string) => {
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return (
+          <span key={i} style={{ fontWeight: 700 }}>
+            {part.slice(2, -2)}
+          </span>
+        );
+      }
+      return <span key={i}>{part}</span>;
+    });
+  };
+
   return (
     <AbsoluteFill
       style={{
@@ -110,7 +125,7 @@ export const BulletSlide: React.FC<BulletSlideProps> = ({
               <span style={{ color: "#6366f1", fontWeight: 700 }}>
                 {bulletIcon}
               </span>
-              <span style={{ flex: 1 }}>{bullet}</span>
+              <span style={{ flex: 1 }}>{renderTextWithMarkdown(bullet)}</span>
             </li>
           );
         })}

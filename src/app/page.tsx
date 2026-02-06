@@ -1,8 +1,10 @@
 "use client";
 
 import { Player } from "@remotion/player";
+import canvasConfetti from "canvas-confetti";
 import type { NextPage } from "next";
 import { useCallback, useMemo, useState } from "react";
+import toast from "react-hot-toast";
 import {
   defaultEduCompProps,
   EDU_COMP_NAME,
@@ -55,6 +57,8 @@ const Home: NextPage = () => {
       }
 
       setTimeline(parsed.data);
+      toast.success("Video generated successfully!");
+      canvasConfetti();
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -81,7 +85,7 @@ const Home: NextPage = () => {
             htmlFor="prompt"
             className="block text-sm font-medium text-slate-300 mb-2"
           >
-            Enter your topic or concept (Right now the animations are hardcoded json format, Only 3 mentioned below work for now. Would need to implement a way to generate these json format based on the prompt through AI)
+            Enter your topic or concept 
           </label>
           <textarea
             id="prompt"

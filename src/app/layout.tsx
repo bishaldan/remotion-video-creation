@@ -1,5 +1,5 @@
-import "../../styles/global.css";
 import { Metadata, Viewport } from "next";
+import "../../styles/global.css";
 
 export const metadata: Metadata = {
   title: "Remotion and Next.js",
@@ -12,6 +12,8 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
+import { Toaster } from "react-hot-toast";
+
 export default function RootLayout({
   children,
 }: {
@@ -19,7 +21,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-background">{children}</body>
+      <body className="bg-background">
+        {children}
+        <Toaster />
+      </body>
     </html>
   );
 }
