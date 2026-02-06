@@ -6,7 +6,7 @@ Build dynamic, AI-powered educational videos using Next.js and Remotion. This pr
 
 Check out a sample generated video:
 ![Demo](./public/render-1770376052292-u0ga0p.mp4)
-[Sample Educational Video](./public/render-1770376052292-u0ga0p.mp4)
+
 
 ## 🚀 Features
 
