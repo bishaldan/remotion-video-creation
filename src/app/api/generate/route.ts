@@ -1,7 +1,9 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest, NextResponse } from "next/server";
+import { Timeline } from "../../../../types/constants";
 import { extractPDFContent } from "../../../lib/pdf-extractor";
 import { buildPrompt } from "../../../lib/prompt-builder";
+import { batchSearchUnsplash } from "../../../lib/unsplash";
 
 // Simple sanitization to handle potential Markdown code blocks in response
 const cleanJsonResponse = (text: string): string => {
@@ -19,7 +21,7 @@ const cleanJsonResponse = (text: string): string => {
 };
 
 const SYSTEM_PROMPT = `
-You are an expert educational video content generator. Your goal is to create engageing, accurate, and structured educational video timelines based on user topics.
+You are an expert educational video content generator. Your goal is to create engaging, accurate, and visually rich educational video timelines.
 
 You will output a JSON object that matches the following TypeScript interface (do not include the interface definition, just the JSON):
 
@@ -28,7 +30,7 @@ type Slide =
   | {
       type: "text";
       text: string;
-      animation: "typewriter" | "fadeIn" | "wordByWord"; // Default: fadeIn
+      animation: "typewriter" | "fadeIn" | "wordByWord";
       fontSize?: number;
       textColor?: string;
       backgroundColor?: string;
@@ -38,7 +40,7 @@ type Slide =
       type: "bullets";
       title?: string;
       bullets: string[];
-      bulletIcon?: string; // Emoji or character
+      bulletIcon?: string;
       textColor?: string;
       backgroundColor?: string;
       durationInSeconds: number;
@@ -54,8 +56,43 @@ type Slide =
   | {
       type: "threeD";
       title?: string;
-      shape: "cube" | "sphere" | "pyramid" | "torus";
+      shape: "cube" | "sphere" | "pyramid" | "torus" | "cylinder";
+      objects?: { shape: string; color: string; position: [number, number, number]; scale: number; label?: string; animation?: string; rotation?: [number, number, number] }[];
+      cameraPosition?: [number, number, number];
       color?: string;
+      backgroundColor?: string;
+      durationInSeconds: number;
+    }
+  | {
+      type: "image";
+      imageUrl: string; // Leave empty, will be filled based on imageQuery
+      imageQuery: string; // Specific keyword for Unsplash search (e.g., "DNA helix black background")
+      caption?: string;
+      kenBurns: "zoomIn" | "zoomOut" | "panLeft" | "panRight" | "none";
+      backgroundColor?: string;
+      durationInSeconds: number;
+    }
+  | {
+      type: "lottie";
+      animationType: "explaining" | "thinking" | "pointing" | "celebrating" | "writing" | "presenting";
+      text: string;
+      title?: string;
+      position: "left" | "right";
+      backgroundColor?: string;
+      durationInSeconds: number;
+    }
+  | {
+      type: "intro";
+      title: string;
+      subtitle?: string;
+      author?: string;
+      backgroundColor?: string;
+      durationInSeconds: number;
+    }
+  | {
+      type: "outro";
+      title?: string;
+      callToAction?: string;
       backgroundColor?: string;
       durationInSeconds: number;
     };
@@ -68,40 +105,39 @@ interface Timeline {
 \`\`\`
 
 **Instructions:**
-1.  **Research Deeply & Factual Truth:** The user will give a topic. You MUST cross-reference scientific facts before generating the timeline. For 3D scenes, ensure the objects, their proportions, and their positions reflect reality (e.g., number of electrons in a shell, relative size of planets).
-2.  **Context & Constraints:**
-    *   **Resolution:** 1920x1080 pixels.
-    *   **FPS:** 30 frames per second.
-    *   **Safe Area:** Keep critical elements within 100px padding (x: 100-1820, y: 100-980).
-3.  **Structure:** Create 4-8 slides that explain the concept logically:
-    *   **Introduction:** Use a "text" or "threeD" slide.
-    *   **Breakdown:** Use "bullets" slides.
-    *   **Visuals:** Use "diagram" slides. **CRITICAL:** Position nodes strictly within the safe area (x: 100-1820, y: 100-980).
-    *   **Conclusion:** Summarize with a "text" slide.
+1.  **Research Deeply & Factual Truth:** Cross-reference facts. Ensure 3D accuracy.
+2.  **Context & Constraints (HIGH PRIORITY):**
+    *   **Resolution:** 1920x1080 pixels. **FPS:** 30.
+    *   **Safe Area:** Keep critical elements within 100px padding.
+    *   **ALL VISUALS MUST FIT within 1920x1080** - objects too large will be clipped, too small won't be visible.
+3.  **Slide Variety (CRITICAL):**
+    *   **Introduction:** ALWAYS start with an **Intro** slide.
+    *   **Core Concepts:** Use **Image** (visuals), **ThreeD** (spatial), **Diagram** (relationships), or **Lottie** (explaining) slides.
+    *   **Details:** Use **Bullets** slides with emoji icons (e.g., 💡, 🔬, 🌍).
+    *   **Conclusion:** ALWAYS end with an **Outro** slide.
+    *   **Mix it up!** Avoid sequential slides of the same type.
 4.  **Visuals:**
-    *   **Background:** ALWAYS use "#ffffff" (white).
-    *   **Text/Colors:** Use dark, high-contrast colors (e.g., "#1e293b").
-    *   **3D Scenes (Data-Driven):** Build complex dioramas using the \`objects\` array in \`threeD\` slides.
-        *   **Layout:** The 3D Canvas is **FULLSCREEN** with a top padding. The title is at the **TOP-MIDDLE**.
-        *   **Centering:** The center of the 3D world is \`[0, 0, 0]\`. ALWAYS place the primary object (Nucleus/Sun) at \`[0, 0, 0]\`.
-        *   **Stationary Paths:** Visible orbit rings (torus) MUST use \`animation: "none"\` and \`rotation: [1.57, 0, 0]\` so they remain fixed, flat, and perfectly circular.
-        *   **Perspective:** For atoms or orbital motion, ALWAYS use \`cameraPosition: [0, 20, 0]\` (looking straight down).
-        *   **Objects:** Use \`sphere\`, \`cube\`, \`pyramid\`, \`torus\` (use sparingly for special shells), \`cylinder\`.
-5.  **Format:** Return ONLY valid JSON.
-
-**Example Topic:** "Atomic Structure of Helium"
-**Example Output Structure (ThreeD Slide):**
-{
-  "type": "threeD",
-  "title": "Helium Atom Structure",
-  "objects": [
-    { "shape": "sphere", "color": "#ef4444", "position": [0,0,0], "scale": 1, "label": "Nucleus (2P+2N)", "animation": "pulse" },
-    { "shape": "sphere", "color": "#3b82f6", "position": [2.5,0,0], "scale": 0.3, "label": "Electron", "animation": "orbit" },
-    { "shape": "sphere", "color": "#3b82f6", "position": [-2.5,0,0], "scale": 0.3, "label": "Electron", "animation": "orbit" },
-    { "shape": "torus", "color": "#94a3b8", "position": [0,0,0], "scale": 2.5, "rotation": [1.5,0,0], "animation": "none" }
-  ],
-  "durationInSeconds": 8
-}
+    *   **Backgrounds:** Use dark, modern gradients. **DO NOT** use white (#ffffff) or plain black (#000000).
+        *   Examples: "linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%)", "linear-gradient(135deg, #2d1b4e 0%, #0f0f1a 100%)".
+    *   **Images (MANDATORY - STRICT 3-WORD LIMIT):**
+        *   \`imageQuery\` MUST be EXACTLY 1-3 simple words. NO MORE.
+        *   ✅ Good: "solar system", "dna", "mountain", "ocean wave", "brain anatomy"
+        *   ❌ Bad: "abstract visualization of quantum mechanics", "beautiful sunset over mountain range"
+        *   If you use more than 3 words, images WILL NOT be found.
+    *   **Lottie:** Use "explaining" for intros, "thinking" for questions, "pointing" for emphasis, "celebrating" for endings.
+5.  **3D Slides (HIGH PRIORITY - 1800x900 AWARE):**
+    *   **Canvas is 1920x1080 pixels** - design objects to fill ~60-80% of screen.
+    *   Keep object count LOW (1-3 objects max for visibility).
+    *   Positions: x,y,z values between -2 and 2 (closer to center = more visible).
+    *   Scale values: 1.0-1.5 for single objects, 0.7-1.0 for 2-3 objects.
+    *   **DO NOT** use scale < 0.5 (too small) or > 2.0 (clips out of frame).
+    *   Use "float" or "none" animations only.
+6.  **Diagram Slides (CRITICAL):**
+    *   Keep node count LOW (3-5 nodes max).
+    *   Space nodes evenly within safe area: x values 250-1650, y values 150-550.
+    *   Use descriptive short labels (2-4 words max).
+    *   Use colors from the palette: #6366f1, #8b5cf6, #ec4899, #10b981.
+7.  **Format:** Return ONLY valid JSON.
 `;
 
 export async function POST(request: NextRequest) {
@@ -186,7 +222,7 @@ export async function POST(request: NextRequest) {
     const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        { error: "Gemini API key is not configured" },
+        { error: " API key is not configured" },
         { status: 500 }
       );
     }
@@ -203,10 +239,49 @@ export async function POST(request: NextRequest) {
     const text = response.text();
     const cleanedText = cleanJsonResponse(text);
 
-    let timeline;
+    let timeline: Timeline;
     try {
       timeline = JSON.parse(cleanedText);
-      console.log('The Timeline:', JSON.stringify(timeline, null, 2));
+      // console.log('The Timeline (Raw):', JSON.stringify(timeline, null, 2));
+
+      // Post-process: Resolve Unsplash images
+      const imageQueries: string[] = [];
+      const imageSlides: number[] = [];
+
+      // Identify image slides and collect queries
+      timeline.slides.forEach((slide, index) => {
+        if (slide.type === "image" && slide.imageQuery) {
+          imageQueries.push(slide.imageQuery);
+          imageSlides.push(index);
+        }
+      });
+
+      // Batch fetch from Unsplash if we have images
+      if (imageQueries.length > 0) {
+        console.log("Fetching Unsplash images for:", imageQueries);
+        const imagesMap = await batchSearchUnsplash(imageQueries);
+
+        // Update slides with resolved URLs
+        for (let i = 0; i < imageSlides.length; i++) {
+          const slideIndex = imageSlides[i];
+          const query = imageQueries[i];
+          const image = imagesMap.get(query);
+          const slide = timeline.slides[slideIndex];
+          
+          if (slide.type === "image" && image) {
+            slide.imageUrl = image.url;
+          //   // Optionally update caption if not provided or add credit
+          //   if (!slide.creditText) {
+          //       // @ts-ignore - Adding property that might not exist in strict type if not defined in prompt interface, but exists in our schema
+          //       slide.creditText = `Photo by ${image.photographer} / Unsplash`;
+          //   }
+          } else if (slide.type === "image") {
+              // Fallback if no image found (though fallback logic is in unsplash.ts too)
+              slide.imageUrl = `https://source.unsplash.com/1920x1080/?${encodeURIComponent(query)}`;
+          }
+        }
+      }
+
     } catch (parseError) {
       console.error("JSON Parse Error:", parseError, "Text:", text);
       return NextResponse.json(

@@ -1,6 +1,7 @@
 import { Environment, Html, OrbitControls } from "@react-three/drei";
-import { Canvas, useFrame } from "@react-three/fiber";
-import React, { useRef } from "react";
+import { useFrame } from "@react-three/fiber";
+import { ThreeCanvas } from "@remotion/three";
+import React, { useMemo, useRef } from "react";
 import { interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import * as THREE from "three";
 
@@ -30,127 +31,95 @@ export interface ThreeDSlideProps {
 interface ShapeProps {
   object: ThreeDObject;
   progress: number;
+  dynamicScale: number;
 }
 
-const OrbitPath: React.FC<{ radius: number; color: string }> = ({ radius, color }) => {
-  return (
-    <mesh rotation={[Math.PI / 2, 0, 0]}>
-      <torusGeometry args={[radius, 0.01, 16, 100]} />
-      <meshBasicMaterial color={color} transparent opacity={0.1} />
-    </mesh>
-  );
-};
-
-const AnimatedShape: React.FC<ShapeProps> = ({ object, progress }) => {
+const AnimatedShape: React.FC<ShapeProps> = ({ object, progress, dynamicScale }) => {
   const meshRef = useRef<THREE.Mesh>(null);
   const { shape, color, position, scale: baseScale, animation: rawAnimation, label } = object;
 
-  // FIX: Disable pulse animation for spheres per user request
+  // Disable pulse for spheres
   const animation = (shape === "sphere" && rawAnimation === "pulse") ? "none" : rawAnimation;
 
   useFrame((state) => {
     if (meshRef.current) {
       const t = state.clock.getElapsedTime();
-      
       const [rx, ry, rz] = object.rotation || [0, 0, 0];
       
-      // CRITICAL FIX: Only apply base rotation. Do NOT auto-spin unless requested.
       meshRef.current.rotation.x = rx;
-      meshRef.current.rotation.y = ry;
+      meshRef.current.rotation.y = ry + (animation === "rotate" ? t * 0.5 : 0);
       meshRef.current.rotation.z = rz;
 
-      // Animation logic
-      // Animation logic
       if (animation === "float") {
-        meshRef.current.position.y = position[1] + Math.sin(t * 2) * 0.2;
-      } else if (animation === "pulse") {
-        const pulse = 1 + Math.sin(t * 4) * 0.1;
-        meshRef.current.scale.set(baseScale * pulse, baseScale * pulse, baseScale * pulse);
+        meshRef.current.position.y = position[1] + Math.sin(t * 2) * 0.3;
       } else if (animation === "orbit") {
-        // RADICAL FIX: Ignore initial position for the 'center' of orbit. 
-        // Orbit radius is determined by the distance of initial position from center [0,0,0]
         const radius = Math.sqrt(position[0]**2 + position[2]**2) || 2;
         const initialAngle = Math.atan2(position[2], position[0]);
-        const angle = t * (object.orbitSpeed || 1) + initialAngle; // Support custom speed if property added later, else default
-        
-        // Apply position DIRECTLY to mesh relative to group at [0,0,0] if we move group there
+        const angle = t * (object.orbitSpeed || 0.5) + initialAngle;
         meshRef.current.position.x = Math.cos(angle) * radius;
         meshRef.current.position.z = Math.sin(angle) * radius;
-        // Keep Y from initial position
         meshRef.current.position.y = position[1];
-      } else if (animation === "rotate") {
-        meshRef.current.rotation.z = t * 2;
       }
     }
   });
 
-  const entryScale = interpolate(progress, [0, 0.2], [0, 1], {
+  const entryScale = interpolate(progress, [0, 0.3], [0, 1], {
     extrapolateRight: "clamp",
   });
 
-  const finalScale = animation === "pulse" ? 1 : baseScale * entryScale;
+  const finalScale = baseScale * dynamicScale * entryScale;
 
-  // ... (renderGeometry function omitted for brevity, logic unchanged) ...
   const renderGeometry = () => {
     switch (shape) {
       case "cube":
-        return <boxGeometry args={[2, 2, 2]} />;
+        return <boxGeometry args={[1.5, 1.5, 1.5]} />;
       case "sphere":
-        return <sphereGeometry args={[1.2, 32, 32]} />;
+        return <sphereGeometry args={[0.8, 32, 32]} />;
       case "pyramid":
-        return <coneGeometry args={[1.2, 2, 4]} />;
+        return <coneGeometry args={[0.8, 1.5, 4]} />;
       case "torus":
-        // Ultra-thin torus for orbit paths
-        return <torusGeometry args={[1, 0.02, 16, 100]} />;
+        return <torusGeometry args={[0.6, 0.2, 16, 48]} />;
       case "cylinder":
-        return <cylinderGeometry args={[1, 1, 2, 32]} />;
+        return <cylinderGeometry args={[0.6, 0.6, 1.5, 32]} />;
       default:
-        return <boxGeometry args={[2, 2, 2]} />;
+        return <boxGeometry args={[1.5, 1.5, 1.5]} />;
     }
   };
 
-  // Determine group position:
-  // If orbiting, the GROUP is anchored at [0,0,0] so the mesh orbits around the scene center.
-  // Otherwise, the GROUP is at the object's defined position.
-  const groupPosition: [number, number, number] = object.animation === "orbit" ? [0, 0, 0] : position;
+  const groupPosition: [number, number, number] = animation === "orbit" ? [0, 0, 0] : position;
 
   return (
-    <group>
-      {object.animation === "orbit" && object.showTrajectory !== false && (
-        <OrbitPath radius={Math.sqrt(position[0]**2 + position[2]**2) || 2} color={color} />
-      )}
-      <group position={groupPosition}>
-        <mesh ref={meshRef} scale={[finalScale, finalScale, finalScale]}>
+    <group position={groupPosition}>
+      <mesh ref={meshRef} scale={[finalScale, finalScale, finalScale]} position={animation === "orbit" ? undefined : [0, 0, 0]}>
         {renderGeometry()}
         <meshStandardMaterial
           color={color}
-          metalness={0.3}
-          roughness={0.4}
+          metalness={0.4}
+          roughness={0.3}
         />
         {label && (
-          // Labels attached to RIM for Torus, CENTER-TOP for others
           <Html 
-            distanceFactor={8} 
-            position={shape === "torus" ? [1.1, 0, 0] : [0, 0.6, 0]} 
+            distanceFactor={6} 
+            position={[0, 1.2, 0]} 
             center
-            style={{ pointerEvents: 'none' }} // Prevent blocking
+            style={{ pointerEvents: 'none' }}
           >
             <div style={{
-              background: "rgba(0,0,0,0.7)",
+              background: "rgba(0,0,0,0.8)",
               color: "white",
-              padding: "2px 8px",
-              borderRadius: "4px",
-              fontSize: "14px",
+              padding: "6px 12px",
+              borderRadius: "6px",
+              fontSize: "16px",
               whiteSpace: "nowrap",
-              fontFamily: "sans-serif",
-              border: "1px solid rgba(255,255,255,0.3)"
+              fontFamily: "Inter, sans-serif",
+              fontWeight: 500,
+              border: "1px solid rgba(255,255,255,0.2)"
             }}>
               {label}
             </div>
           </Html>
         )}
       </mesh>
-      </group>
     </group>
   );
 };
@@ -161,10 +130,10 @@ export const ThreeDSlide: React.FC<ThreeDSlideProps> = ({
   cameraPosition,
   shape = "cube",
   color = "#6366f1",
-  backgroundColor = "#ffffff",
+  backgroundColor = "#0f0f1a",
 }) => {
   const frame = useCurrentFrame();
-  const { durationInFrames } = useVideoConfig();
+  const { durationInFrames, width, height } = useVideoConfig();
 
   const progress = frame / durationInFrames;
 
@@ -175,9 +144,37 @@ export const ThreeDSlide: React.FC<ThreeDSlideProps> = ({
       color,
       position: [0, 0, 0],
       scale: 1,
-      animation: "none",
+      animation: "float",
     },
   ];
+
+  // DYNAMIC SCALING: Calculate based on object count
+  const dynamicScale = useMemo(() => {
+    const count = finalObjects.length;
+    if (count <= 1) return 1.5;
+    if (count <= 2) return 1.2;
+    if (count <= 4) return 0.9;
+    return 0.6;
+  }, [finalObjects.length]);
+
+  // DYNAMIC CAMERA: Calculate based on scene bounds
+  const calculatedCamera = useMemo<[number, number, number]>(() => {
+    if (cameraPosition) return cameraPosition;
+    
+    const count = finalObjects.length;
+    const maxDist = Math.max(
+      ...finalObjects.map(o => 
+        Math.sqrt(o.position[0]**2 + o.position[1]**2 + o.position[2]**2)
+      ),
+      2
+    );
+    
+    // Closer camera for fewer objects, farther for more
+    const baseDist = count <= 2 ? 6 : count <= 4 ? 8 : 12;
+    const finalDist = baseDist + maxDist * 0.5;
+    
+    return [finalDist * 0.6, finalDist * 0.4, finalDist * 0.8];
+  }, [finalObjects, cameraPosition]);
 
   return (
     <div
@@ -185,42 +182,67 @@ export const ThreeDSlide: React.FC<ThreeDSlideProps> = ({
         width: "100%",
         height: "100%",
         backgroundColor,
-        position: "absolute", // Force absolute to prevent relative flow issues
-        inset: 0,             // Force full coverage of parent
-        overflow: "visible",
+        position: "absolute",
+        inset: 0,
+        overflow: "hidden",
       }}
     >
-      {/* 3D Canvas takes the whole video area - FULLSCREEN */}
-      <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, right: 0 }}>
-    <Canvas
-  camera={{ 
-    position: [10, 8, 10], 
-    fov: 60,
-    near: 0.1,
-    far: 100000
-  }}
-  style={{ width: "100%", height: "100%" }}
->
-  <ambientLight intensity={0.5} />
-  <directionalLight position={[10, 10, 5]} intensity={1} />
-  <pointLight position={[-10, -10, -5]} intensity={0.5} color="#818cf8" />
-  
-  <group position={[0, 0, 0]} scale={0.6}>
-    {finalObjects.map((obj, i) => (
-      <AnimatedShape key={i} object={obj} progress={progress} />
-    ))}
-  </group>
+      <ThreeCanvas
+        width={width}
+        height={height}
+        camera={{ 
+          position: calculatedCamera, 
+          fov: 50,
+          near: 0.1,
+          far: 1000
+        }}
+        style={{ width: "100%", height: "100%" }}
+      >
+        <ambientLight intensity={0.6} />
+        <directionalLight position={[5, 8, 5]} intensity={1.2} />
+        <pointLight position={[-5, -5, -5]} intensity={0.4} color="#818cf8" />
 
-  <Environment preset="city" />
-  <OrbitControls 
-    enableZoom={false} 
-    enablePan={false} 
-    enableRotate={false} 
-    target={[0, 0, 0]}
-  />
-</Canvas>
-      </div>
+        {/* Center the scene */}
+        <group position={[0, 0, 0]}>
+          {finalObjects.map((obj, i) => (
+            <AnimatedShape 
+              key={i} 
+              object={obj} 
+              progress={progress} 
+              dynamicScale={dynamicScale}
+            />
+          ))}
+        </group>
 
+        <Environment preset="city" />
+        <OrbitControls 
+          enableZoom={false} 
+          enablePan={false} 
+          enableRotate={false} 
+          target={[0, 0, 0]}
+        />
+      </ThreeCanvas>
+
+      {/* Title overlay */}
+      {title && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: 60,
+            left: 0,
+            right: 0,
+            textAlign: "center",
+            fontFamily: "Inter, sans-serif",
+            fontSize: 42,
+            fontWeight: 700,
+            color: "#ffffff",
+            textShadow: "0 4px 20px rgba(0,0,0,0.5)",
+            opacity: interpolate(frame, [0, 20], [0, 1], { extrapolateRight: "clamp" }),
+          }}
+        >
+          {title}
+        </div>
+      )}
     </div>
   );
 };
