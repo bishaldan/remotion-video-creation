@@ -1,9 +1,9 @@
 "use client";
 
-import { Player } from "@remotion/player";
+import { Player, PlayerRef } from "@remotion/player";
 import canvasConfetti from "canvas-confetti";
 import type { NextPage } from "next";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import {
   defaultEduCompProps,
@@ -28,14 +28,26 @@ const Home: NextPage = () => {
   const [uploadMode, setUploadMode] = useState<"prompt" | "pdf">("prompt");
   const [isEditing, setIsEditing] = useState(false);
   const [editPrompt, setEditPrompt] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
+  const [isTimelineExpanded, setIsTimelineExpanded] = useState(true);
+  const playerRef = useRef<PlayerRef>(null);
 
+  //Calculates the total length for constant given fps
   const durationInFrames = useMemo(
     () => calculateTimelineDuration(timeline.slides, VIDEO_FPS),
     [timeline]
   );
 
-  const [isDragging, setIsDragging] = useState(false);
-  const [isTimelineExpanded, setIsTimelineExpanded] = useState(true);
+  //Seek to a specific slide
+  const seekToSlide = useCallback((index: number) => {
+    if (!playerRef.current) return;
+    
+    let frame = 0;
+    for (let i = 0; i < index; i++) {
+      frame += timeline.slides[i].durationInSeconds * VIDEO_FPS;
+    }
+    playerRef.current.seekTo(frame);
+  }, [timeline]);
 
   //TIMELINE SLIDE ORDER HANDLER
   const moveSlide = useCallback((index: number, direction: "up" | "down") => {
@@ -535,6 +547,7 @@ const Home: NextPage = () => {
           </div>
           <div className="overflow-hidden rounded-xl shadow-2xl">
             <Player
+              ref={playerRef}
               component={EduMain}
               inputProps={timeline}
               durationInFrames={durationInFrames}
@@ -575,7 +588,8 @@ const Home: NextPage = () => {
               {timeline.slides.map((slide, index) => (
                 <div
                   key={index}
-                  className="group flex items-center gap-4 bg-black/20 p-3 rounded-xl border border-white/5 hover:border-purple-500/30 transition-all"
+                  onClick={() => seekToSlide(index)}
+                  className="group flex items-center gap-4 bg-black/20 p-3 rounded-xl border border-white/5 hover:border-purple-500/30 transition-all cursor-pointer hover:bg-black/30"
                 >
                   <span className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center text-xs font-medium text-slate-400 group-hover:bg-purple-500/20 group-hover:text-purple-300 transition-colors">
                     {index + 1}
