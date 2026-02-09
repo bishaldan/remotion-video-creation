@@ -5,9 +5,10 @@
  * - PDF-only mode: Uses extracted PDF text
  * - Text-only mode: Uses user's text prompt (existing behavior)
  * - Combined mode: Prioritizes PDF content with supplementary text prompt
+ * - Edit mode: Modifies existing timeline based on user instructions (with optional PDF context)
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { extractPDFContent } from "./pdf-extractor";
 
 export interface PromptBuilderInput {
@@ -21,16 +22,6 @@ export interface PromptBuilderInput {
 
 /**
  * Builds an appropriate prompt for the AI model based on the provided input.
- * 
- * @param input - The input containing PDF text, metadata, and/or user prompt
- * @returns A formatted prompt string for the AI model
- * 
- * Requirements:
- * - 3.1: Receive extracted PDF text in prompt when PDF is provided
- * - 3.2: Generate content based on user's text prompt when no PDF
- * - 3.3: Prepend instructions when PDF content is provided
- * - 3.4: Append extracted text after instruction
- * - 3.5: Prioritize PDF content when both PDF and text prompt are provided
  */
 export function buildPrompt(input: PromptBuilderInput): string {
   // PDF-only mode or Combined mode (PDF + supplementary prompt)
@@ -69,7 +60,32 @@ Create an educational video timeline that covers the key concepts from this docu
   throw new Error("Either pdfText or userPrompt must be provided");
 }
 
-export const getPrompt= async (request: NextRequest): Promise<string> => {
+
+/**
+ * Builds a prompt for editing an existing timeline.
+ */
+export function buildEditPrompt(timeline: any, editInstruction: string): string {
+  return `You are an expert video editor. You are given a specific "Current Timeline" JSON and a "User Edit Request".
+
+**GOAL:**
+Modify the "Current Timeline" to satisfy the "User Edit Request".
+
+**RULES:**
+1.  **Output ONLY valid JSON.** No markdown, no explanations.
+2.  **Minimal Changes:** Only change what is requested. Keep the rest of the structure intact.
+3.  **Validity:** Ensure the output is still valid according to the original schema (e.g., correct slide types, fields).
+
+**Current Timeline:**
+${JSON.stringify(timeline, null, 2)}
+
+**User Edit Request:**
+"${editInstruction}"
+
+**Output:**
+Return the modified JSON object.`;
+}
+
+export const getPrompt = async (request: NextRequest, isEdit: boolean = false): Promise<string> => {
 
     const contentType = request.headers.get("content-type") || "";
     
@@ -82,12 +98,9 @@ export const getPrompt= async (request: NextRequest): Promise<string> => {
       const pdfFile = formData.get("pdf") as File | null;
       const userPrompt = formData.get("prompt") as string | null;
       
-      // Validate that either PDF or prompt is provided
+      // Validate that either PDF or prompt is provided (or just timeline for edit?)
       if (!pdfFile && !userPrompt) {
-        throw NextResponse.json(
-          { error: "Please provide either a PDF file or text prompt" },
-          { status: 400 }
-        );
+        throw new Error("Please provide either a PDF file or text prompt");
       }
       
       // If PDF is present, extract its content
@@ -95,10 +108,7 @@ export const getPrompt= async (request: NextRequest): Promise<string> => {
         // File size validation (10MB = 10 * 1024 * 1024 bytes)
         const MAX_FILE_SIZE = 10 * 1024 * 1024;
         if (pdfFile.size > MAX_FILE_SIZE) {
-          throw NextResponse.json(
-            { error: "File size exceeds 10MB limit" },
-            { status: 400 }
-          );
+          throw new Error("File size exceeds 10MB limit");
         }
         
         // Convert File to ArrayBuffer for processing
@@ -114,14 +124,27 @@ export const getPrompt= async (request: NextRequest): Promise<string> => {
           };
         } catch (extractionError) {
           console.error("PDF extraction error:", extractionError);
-          const errorMessage = extractionError instanceof Error 
-            ? extractionError.message 
-            : "Failed to extract PDF content";
-          throw NextResponse.json(
-            { error: errorMessage },
-            { status: 400 }
-          );
+          throw new Error(extractionError instanceof Error ? extractionError.message : "Failed to extract PDF content");
         }
+      }
+
+      if (isEdit) {
+        const timelineJson = formData.get("timeline") as string | null;
+        if (!timelineJson) {
+           throw new Error("Timeline is required for editing");
+        }
+        let timeline;
+        try {
+            timeline = JSON.parse(timelineJson);
+        } catch (e) {
+            throw new Error("Invalid timeline JSON");
+        }
+
+        let fullInstruction = userPrompt || "Edit the video based on the provided document.";
+        if (pdfText) {
+            fullInstruction += `\n\nReference Document Context:\n${pdfText}`;
+        }
+        return buildEditPrompt(timeline, fullInstruction);
       }
       
       // Build prompt using the prompt builder utility
@@ -133,13 +156,18 @@ export const getPrompt= async (request: NextRequest): Promise<string> => {
     } else {
       // Handle JSON request (backward compatibility for text-only mode)
       const body = await request.json();
-      const userPrompt = body.prompt;
+      
+      if (isEdit) {
+         const { timeline, editPrompt } = body;
+         if (!timeline || !editPrompt) {
+            throw new Error("Timeline and editPrompt are required");
+         }
+         return buildEditPrompt(timeline, editPrompt);
+      }
 
+      const userPrompt = body.prompt;
       if (!userPrompt || typeof userPrompt !== "string") {
-        throw NextResponse.json(
-          { error: "Prompt is required" },
-          { status: 400 }
-        );
+        throw new Error("Prompt is required");
       }
       
       // Build prompt for text-only mode

@@ -209,3 +209,82 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const prompt = await getPrompt(request, true);
+
+    // GEMINI API
+    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: "API key is not configured" },
+        { status: 500 }
+      );
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+    // Reuse SYSTEM_PROMPT to ensure valid JSON output
+    const result = await model.generateContent([
+      SYSTEM_PROMPT, 
+      prompt
+    ]);
+
+    const response = await result.response;
+    const text = response.text();
+    const cleanedText = cleanJsonResponse(text);
+
+    let newTimeline: Timeline;
+    try {
+      newTimeline = JSON.parse(cleanedText);
+      console.log('Edited Timeline:', JSON.stringify(newTimeline, null, 2));
+
+      // Post-process: Resolve Unsplash images (same logic as POST)
+      const imageQueries: string[] = [];
+      const imageSlides: number[] = [];
+
+      newTimeline.slides.forEach((slide: any, index: number) => {
+        if (slide.type === "image" && slide.imageQuery) {
+          imageQueries.push(slide.imageQuery);
+          imageSlides.push(index);
+        }
+      });
+
+      if (imageQueries.length > 0) {
+        console.log("Fetching Unsplash images for edits:", imageQueries);
+        const imagesMap = await batchSearchUnsplash(imageQueries);
+
+        for (let i = 0; i < imageSlides.length; i++) {
+          const slideIndex = imageSlides[i];
+          const query = imageQueries[i];
+          const image = imagesMap.get(query);
+          const slide = newTimeline.slides[slideIndex];
+          
+          if (slide.type === "image" && image) {
+            slide.imageUrl = image.url;
+          } else if (slide.type === "image") {
+              slide.imageUrl = `https://source.unsplash.com/1920x1080/?${encodeURIComponent(query)}`;
+          }
+        }
+      }
+
+      return NextResponse.json({ timeline: newTimeline });
+
+    } catch (parseError) {
+      console.error("JSON Parse Error in Edit:", parseError, "Text:", text);
+      return NextResponse.json(
+        { error: "Failed to parse edited timeline" },
+        { status: 500 }
+      );
+    }
+
+  } catch (error) {
+    console.error("Edit API error:", error);
+    return NextResponse.json(
+      { error: "Failed to edit timeline" },
+      { status: 500 }
+    );
+  }
+}
