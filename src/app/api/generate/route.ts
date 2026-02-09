@@ -1,8 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest, NextResponse } from "next/server";
 import { Timeline } from "../../../../types/constants";
-import { extractPDFContent } from "../../../lib/pdf-extractor";
-import { buildPrompt } from "../../../lib/prompt-builder";
+import { getPrompt } from "../../../lib/prompt-builder";
 import { batchSearchUnsplash } from "../../../lib/unsplash";
 
 // Simple sanitization to handle potential Markdown code blocks in response
@@ -50,16 +49,6 @@ type Slide =
       title?: string;
       nodes: { id: string; label: string; x: number; y: number; color?: string; width?: number }[];
       arrows: { from: string; to: string; label?: string }[];
-      backgroundColor?: string;
-      durationInSeconds: number;
-    }
-  | {
-      type: "threeD";
-      title?: string;
-      shape: "cube" | "sphere" | "pyramid" | "torus" | "cylinder";
-      objects?: { shape: string; color: string; position: [number, number, number]; scale: number; label?: string; animation?: string; rotation?: [number, number, number] }[];
-      cameraPosition?: [number, number, number];
-      color?: string;
       backgroundColor?: string;
       durationInSeconds: number;
     }
@@ -123,101 +112,22 @@ interface Timeline {
         *   \`imageQuery\` MUST be EXACTLY 1-3 simple words. NO MORE.
         *   ✅ Good: "solar system", "dna", "mountain", "ocean wave", "brain anatomy"
         *   ❌ Bad: "abstract visualization of quantum mechanics", "beautiful sunset over mountain range"
+        *   Unsplash is used to find the images, so use keywords that are likely to be found on Unsplash. Nothing too specific or complex
         *   If you use more than 3 words, images WILL NOT be found.
     *   **Lottie:** Use "explaining" for intros, "thinking" for questions, "pointing" for emphasis, "celebrating" for endings.
-5.  **3D Slides (HIGH PRIORITY - 1800x900 AWARE):**
-    *   **Canvas is 1920x1080 pixels** - design objects to fill ~60-80% of screen.
-    *   Keep object count LOW (1-3 objects max for visibility).
-    *   Positions: x,y,z values between -2 and 2 (closer to center = more visible).
-    *   Scale values: 1.0-1.5 for single objects, 0.7-1.0 for 2-3 objects.
-    *   **DO NOT** use scale < 0.5 (too small) or > 2.0 (clips out of frame).
-    *   Use "float" or "none" animations only.
-6.  **Diagram Slides (CRITICAL):**
+5.  **Diagram Slides (CRITICAL):**
     *   Keep node count LOW (3-5 nodes max).
     *   Space nodes evenly within safe area: x values 250-1650, y values 150-550.
     *   Use descriptive short labels (2-4 words max).
     *   Use colors from the palette: #6366f1, #8b5cf6, #ec4899, #10b981.
-7.  **Format:** Return ONLY valid JSON.
+6.  **Format:** Return ONLY valid JSON.
 `;
 
 export async function POST(request: NextRequest) {
   try {
-    const contentType = request.headers.get("content-type") || "";
-    
     let prompt: string;
-    let pdfText: string | undefined;
-    let pdfMetadata: { title?: string; pageCount: number } | undefined;
-    
-    // Check if request contains FormData (PDF upload)
-    if (contentType.includes("multipart/form-data")) {
-      const formData = await request.formData();
-      const pdfFile = formData.get("pdf") as File | null;
-      const userPrompt = formData.get("prompt") as string | null;
+    prompt = await getPrompt(request);
       
-      // Validate that either PDF or prompt is provided
-      if (!pdfFile && !userPrompt) {
-        return NextResponse.json(
-          { error: "Please provide either a PDF file or text prompt" },
-          { status: 400 }
-        );
-      }
-      
-      // If PDF is present, extract its content
-      if (pdfFile) {
-        // File size validation (10MB = 10 * 1024 * 1024 bytes)
-        const MAX_FILE_SIZE = 10 * 1024 * 1024;
-        if (pdfFile.size > MAX_FILE_SIZE) {
-          return NextResponse.json(
-            { error: "File size exceeds 10MB limit" },
-            { status: 400 }
-          );
-        }
-        
-        // Convert File to ArrayBuffer for processing
-        const arrayBuffer = await pdfFile.arrayBuffer();
-        
-        // Extract PDF content
-        try {
-          const extractedContent = await extractPDFContent(arrayBuffer);
-          pdfText = extractedContent.text;
-          pdfMetadata = {
-            title: extractedContent.metadata.title,
-            pageCount: extractedContent.metadata.pageCount,
-          };
-        } catch (extractionError) {
-          console.error("PDF extraction error:", extractionError);
-          const errorMessage = extractionError instanceof Error 
-            ? extractionError.message 
-            : "Failed to extract PDF content";
-          return NextResponse.json(
-            { error: errorMessage },
-            { status: 400 }
-          );
-        }
-      }
-      
-      // Build prompt using the prompt builder utility
-      prompt = buildPrompt({
-        pdfText,
-        pdfMetadata,
-        userPrompt: userPrompt || undefined,
-      });
-    } else {
-      // Handle JSON request (backward compatibility for text-only mode)
-      const body = await request.json();
-      const userPrompt = body.prompt;
-
-      if (!userPrompt || typeof userPrompt !== "string") {
-        return NextResponse.json(
-          { error: "Prompt is required" },
-          { status: 400 }
-        );
-      }
-      
-      // Build prompt for text-only mode
-      prompt = buildPrompt({ userPrompt });
-    }
-
     // GEMINI API AI RESPONSE TIMELINE GENERATION
     const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     if (!apiKey) {
