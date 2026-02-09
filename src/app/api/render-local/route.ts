@@ -94,7 +94,7 @@ async function renderInBackground(renderId: string, compositionId: string, input
       outputPath: `/out/${renderId}.mp4`, // Use renderId for the file path on disk
     });
 
-    console.log(`✅ Render complete: ${outputPath}`);
+    // console.log(`✅ Render complete: ${outputPath}`);
   } catch (error) {
     console.error("Render error:", error);
     renderProgress.set(renderId, {

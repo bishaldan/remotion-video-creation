@@ -45,7 +45,7 @@ export async function extractPDFContent(
     };
   } catch (error) {
     // Provide descriptive error messages for different failure scenarios
-    console.log(error)
+    // console.log(error)
     if (error instanceof Error) {
       if (error.message.includes('password') || error.message.includes('encrypted')) {
         throw new Error('Failed to extract PDF content: The PDF is password-protected or encrypted');

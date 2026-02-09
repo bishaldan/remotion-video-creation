@@ -1,11 +1,12 @@
 import { fontFamily, loadFont } from "@remotion/google-fonts/Inter";
 import React from "react";
 import {
-    AbsoluteFill,
-    interpolate,
-    useCurrentFrame,
-    useVideoConfig,
+  AbsoluteFill,
+  interpolate,
+  useCurrentFrame,
+  useVideoConfig,
 } from "remotion";
+import { GRADIENT_PRESETS, parseBackground } from "../utils/backgrounds";
 
 loadFont("normal", {
   subsets: ["latin"],
@@ -25,9 +26,9 @@ export const BulletSlide: React.FC<BulletSlideProps> = ({
   title,
   bullets,
   bulletIcon = "•",
-  titleColor = "#1a1a2e",
-  bulletColor = "#333355",
-  backgroundColor = "#ffffff",
+  titleColor = "#ffffff",
+  bulletColor = "#e2e8f0",
+  backgroundColor = GRADIENT_PRESETS.purpleBlue,
 }) => {
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
@@ -60,10 +61,12 @@ export const BulletSlide: React.FC<BulletSlideProps> = ({
     });
   };
 
+  const bgStyle = parseBackground(backgroundColor);
+
   return (
     <AbsoluteFill
       style={{
-        backgroundColor,
+        ...bgStyle,
         padding: 80,
         flexDirection: "column",
         justifyContent: "flex-start",
@@ -79,6 +82,7 @@ export const BulletSlide: React.FC<BulletSlideProps> = ({
             marginBottom: 50,
             opacity: titleOpacity,
             transform: `translateY(${titleY}px)`,
+            textShadow: "0 4px 20px rgba(0,0,0,0.3)",
           }}
         >
           {title}
@@ -122,7 +126,12 @@ export const BulletSlide: React.FC<BulletSlideProps> = ({
                 gap: 16,
               }}
             >
-              <span style={{ color: "#6366f1", fontWeight: 700 }}>
+              <span style={{ 
+                color: "#a78bfa", 
+                fontWeight: 700,
+                fontFamily: "'Noto Color Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', 'Twemoji Mozilla', sans-serif",
+                fontSize: 32,
+              }}>
                 {bulletIcon}
               </span>
               <span style={{ flex: 1 }}>{renderTextWithMarkdown(bullet)}</span>

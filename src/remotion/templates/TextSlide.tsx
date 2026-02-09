@@ -1,11 +1,12 @@
+import { fontFamily, loadFont } from "@remotion/google-fonts/Inter";
 import React from "react";
 import {
-  AbsoluteFill,
-  interpolate,
-  useCurrentFrame,
-  useVideoConfig,
+    AbsoluteFill,
+    interpolate,
+    useCurrentFrame,
+    useVideoConfig,
 } from "remotion";
-import { loadFont, fontFamily } from "@remotion/google-fonts/Inter";
+import { GRADIENT_PRESETS, parseBackground } from "../utils/backgrounds";
 
 loadFont("normal", {
   subsets: ["latin"],
@@ -26,8 +27,8 @@ export const TextSlide: React.FC<TextSlideProps> = ({
   text,
   animation = "fadeIn",
   fontSize = 64,
-  color = "#1a1a2e",
-  backgroundColor = "#ffffff",
+  color = "#ffffff",
+  backgroundColor = GRADIENT_PRESETS.darkSpace,
 }) => {
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
@@ -107,10 +108,12 @@ export const TextSlide: React.FC<TextSlideProps> = ({
     );
   };
 
+  const bgStyle = parseBackground(backgroundColor);
+
   return (
     <AbsoluteFill
       style={{
-        backgroundColor,
+        ...bgStyle,
         justifyContent: "center",
         alignItems: "center",
         padding: 60,
@@ -124,6 +127,7 @@ export const TextSlide: React.FC<TextSlideProps> = ({
           textAlign: "center",
           lineHeight: 1.3,
           maxWidth: "80%",
+          textShadow: "0 4px 20px rgba(0,0,0,0.3)",
         }}
       >
         {animation === "typewriter" && renderTypewriter()}

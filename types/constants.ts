@@ -90,11 +90,58 @@ export const ThreeDSlideSchema = z.object({
   durationInSeconds: z.number().default(5),
 });
 
+// NEW: Image slide schema
+export const ImageSlideSchema = z.object({
+  type: z.literal("image"),
+  imageUrl: z.string(), // Direct URL or will be resolved from imageQuery
+  imageQuery: z.string().optional(), // Keyword for Unsplash search
+  caption: z.string().optional(),
+  kenBurns: z.enum(["zoomIn", "zoomOut", "panLeft", "panRight", "none"]).default("zoomIn"),
+  creditText: z.string().optional(),
+  backgroundColor: z.string().optional(),
+  durationInSeconds: z.number().default(5),
+});
+
+// NEW: Lottie animation slide schema
+export const LottieSlideSchema = z.object({
+  type: z.literal("lottie"),
+  animationType: z.enum(["explaining", "thinking", "pointing", "celebrating", "writing", "presenting"]),
+  animationUrl: z.string().optional(), // Override with custom Lottie URL
+  text: z.string(),
+  title: z.string().optional(),
+  position: z.enum(["left", "right"]).default("left"),
+  backgroundColor: z.string().optional(),
+  durationInSeconds: z.number().default(6),
+});
+
+// NEW: Intro slide schema
+export const IntroSlideSchema = z.object({
+  type: z.literal("intro"),
+  title: z.string(),
+  subtitle: z.string().optional(),
+  author: z.string().optional(),
+  backgroundColor: z.string().optional(),
+  durationInSeconds: z.number().default(6),
+});
+
+// NEW: Outro slide schema
+export const OutroSlideSchema = z.object({
+  type: z.literal("outro"),
+  title: z.string().optional(),
+  callToAction: z.string().optional(),
+  backgroundColor: z.string().optional(),
+  durationInSeconds: z.number().default(6),
+});
+
 export const SlideSchema = z.discriminatedUnion("type", [
   TextSlideSchema,
   BulletSlideSchema,
   DiagramSlideSchema,
   ThreeDSlideSchema,
+  ImageSlideSchema,
+  LottieSlideSchema,
+  IntroSlideSchema,
+  OutroSlideSchema,
 ]);
 
 export const TimelineSchema = z.object({
@@ -111,22 +158,101 @@ export const defaultEduCompProps: Timeline = {
   defaultSlideDuration: 5,
   slides: [
     {
-      type: "text",
-      text: "Welcome to Educational Videos",
-      animation: "wordByWord",
-      durationInSeconds: 2,
+      type: "intro",
+      title: "The Wonder of Learning",
+      subtitle: "Exploring New Horizons with AI",
+      author: "Remotion Series",
+      durationInSeconds: 5,
+    },
+    {
+      type: "lottie",
+      animationType: "explaining",
+      title: "Let's Learn Something New!",
+      text: "This video uses AI-generated content with animated characters to make learning fun and engaging.",
+      position: "left",
+      durationInSeconds: 5,
     },
     {
       type: "bullets",
       title: "What You'll Learn",
       bullets: [
-        "Create animated presentations",
-        "Use dynamic templates",
-        "Generate videos from prompts",
-        "Generate videos from single uploaded pdf",
+        "Create animated presentations with **rich visuals**",
+        "Use dynamic templates with **transitions**",
+        "Generate videos from prompts using **AI**",
+        "Add images and **Lottie animations**",
       ],
+      durationInSeconds: 4,
+    },
+    {
+      type: "image",
+      imageUrl: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1920",
+      caption: "Powered by AI and beautiful visuals",
+      kenBurns: "zoomIn",
+      creditText: "Unsplash",
+      durationInSeconds: 4,
+    },
+    {
+      type: "outro",
+      title: "Thanks for Watching!",
+      callToAction: "Created with Remotion SaaS",
+      durationInSeconds: 5,
+    }
+  ],
+};
+
+export const defaultEduCompProps2: Timeline = {
+  title: "Educational Video",
+  defaultSlideDuration: 5,
+  slides: [
+     {
+      type: "lottie",
+      animationType: "explaining",
+      title: "Let's Learn Something New!",
+      text: "Explaining",
+      position: "left",
       durationInSeconds: 3,
+    },
+    {
+      type: "lottie",
+      animationType: "thinking",
+      title: "Let's Learn Something New!",
+      text: "Thinking",
+      position: "left",
+      durationInSeconds: 5,
+    },
+    {
+      type: "lottie",
+      animationType: "pointing",
+      title: "Let's Learn Something New!",
+      text: " Pointing",
+      position: "left",
+      durationInSeconds: 3,
+    },
+    {
+      type: "lottie",
+      animationType: "celebrating",
+      title: "Let's Learn Something New!",
+      text: "Celebrating",
+      position: "left",
+      durationInSeconds: 3,
+    },
+    {
+      type: "lottie",
+      animationType: "writing",
+      title: "Let's Learn Something New!",
+      text: "Writing",
+      position: "left",
+      durationInSeconds: 3,
+    },
+    {
+      type: "lottie",
+      animationType: "presenting",
+      title: "Let's Learn Something New!",
+      text: "Presenting",
+      position: "left",
+      durationInSeconds: 2,
     },
   ],
 };
+
 
