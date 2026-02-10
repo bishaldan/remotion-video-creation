@@ -257,3 +257,4 @@ This project is set up for scalable cloud rendering.
 ## 📄 License
 
 This project is built on the [Remotion Next.js Template](https://github.com/remotion-dev/template-next). Check [Remotion's License](https://github.com/remotion-dev/remotion/blob/main/LICENSE.md) for commercial usage terms.
+# remotion-video-creation
