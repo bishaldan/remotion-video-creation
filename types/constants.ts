@@ -256,3 +256,78 @@ export const defaultEduCompProps2: Timeline = {
 };
 
 
+
+// NEW: Quiz slide schema
+export const QuizQuestionSchema = z.object({
+  type: z.literal("quiz"),
+  question: z.string(),
+  options: z.array(z.string()).min(2).max(4),
+  correctIndex: z.number(),      // 0-based index of correct option
+  backgroundQuery: z.string(),   // Unsplash image query (1-3 words)
+  backgroundUrl: z.string().optional(), // Resolved by server (optional initially)
+  durationInSeconds: z.number().default(5),
+});
+
+export const QuizTimelineSchema = z.object({
+  title: z.string(),
+  mode: z.literal("quiz"),
+  orientation: z.enum(["landscape", "portrait"]),
+  slides: z.array(z.discriminatedUnion("type", [
+    QuizQuestionSchema,
+    IntroSlideSchema,
+    OutroSlideSchema,
+  ])),
+  defaultSlideDuration: z.number().default(7),
+});
+
+export type QuizQuestion = z.infer<typeof QuizQuestionSchema>;
+export type QuizTimeline = z.infer<typeof QuizTimelineSchema>;
+
+
+export const defaultQuizTimeline: QuizTimeline = {
+  title: "Solar System Quiz",
+  mode: "quiz",
+  orientation: "landscape",
+  defaultSlideDuration: 5,
+  slides: [
+    {
+      type: "intro",
+      title: "Solar System Quiz",
+      subtitle: "Test your knowledge!",
+      author: "Remotion Quiz",
+      durationInSeconds: 5,
+    },
+    {
+      type: "quiz",
+      question: "Which planet is known as the Red Planet?",
+      options: ["Venus", "Mars", "Jupiter", "Saturn"],
+      correctIndex: 1,
+      backgroundQuery: "Mars planet space",
+      backgroundUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/OSIRIS_Mars_true_color.jpg/1920px-OSIRIS_Mars_true_color.jpg",
+      durationInSeconds: 7,
+    },
+    {
+      type: "quiz",
+      question: "What is the largest planet in our solar system?",
+      options: ["Earth", "Jupiter", "Uranus", "Neptune"],
+      correctIndex: 1,
+      backgroundQuery: "Jupiter planet space",
+      backgroundUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Jupiter.jpg/1920px-Jupiter.jpg",
+      durationInSeconds: 7,
+    },
+    {
+      type: "outro",
+      title: "Great Job!",
+      callToAction: "Follow for more quizzes",
+      durationInSeconds: 5,
+    }
+  ],
+};
+
+// Quiz Composition Constants
+export const QUIZ_COMP_LANDSCAPE = "QuizVideoLandscape";
+export const QUIZ_COMP_PORTRAIT = "QuizVideoPortrait";
+export const QUIZ_WIDTH_LANDSCAPE = 1920;
+export const QUIZ_HEIGHT_LANDSCAPE = 1080;
+export const QUIZ_WIDTH_PORTRAIT = 1080;
+export const QUIZ_HEIGHT_PORTRAIT = 1920;

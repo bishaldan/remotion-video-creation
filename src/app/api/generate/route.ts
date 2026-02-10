@@ -1,8 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest, NextResponse } from "next/server";
-import { Timeline } from "../../../../types/constants";
+import { QuizTimeline, Timeline } from "../../../../types/constants";
 import { getPrompt } from "../../../lib/prompt-builder";
-import { batchSearchUnsplash } from "../../../lib/unsplash";
 
 // Simple sanitization to handle potential Markdown code blocks in response
 const cleanJsonResponse = (text: string): string => {
@@ -19,7 +18,7 @@ const cleanJsonResponse = (text: string): string => {
   return cleaned.trim();
 };
 
-const SYSTEM_PROMPT = `
+const NORMAL_SYSTEM_PROMPT = `
 You are an expert educational video content generator. Your goal is to create engaging, accurate, and visually rich educational video timelines.
 
 You will output a JSON object that matches the following TypeScript interface (do not include the interface definition, just the JSON):
@@ -123,10 +122,64 @@ interface Timeline {
 6.  **Format:** Return ONLY valid JSON.
 `;
 
+const QUIZ_SYSTEM_PROMPT = `
+You are an expert viral quiz generator. Your goal is to create engaging, fast-paced quiz videos similar to viral TikTok/Shorts content.
+
+You will output a JSON object that matches the following TypeScript interface (do not include the interface definition, just the JSON):
+
+\`\`\`typescript
+type Slide =
+  | {
+      type: "intro";
+      title: string;
+      subtitle?: string;
+      author?: string;
+      backgroundColor?: string;
+      durationInSeconds: number;
+    }
+  | {
+      type: "quiz";
+      question: string;
+      options: string[]; // Array of 2-4 options
+      correctIndex: number; // 0-based index of the correct option
+      backgroundQuery: string; // 1-3 KEYWORDS for Unsplash image (e.g. "mars planet", "lion face")
+      durationInSeconds: number;
+    }
+  | {
+      type: "outro";
+      title?: string;
+      callToAction?: string;
+      backgroundColor?: string;
+      durationInSeconds: number;
+    };
+
+interface QuizTimeline {
+  title: string;
+  mode: "quiz";
+  slides: Slide[];
+  defaultSlideDuration: number;
+}
+\`\`\`
+
+**Instructions:**
+1. **Topic:** Create a quiz based on the user's prompt.
+2. **Structure:**
+   - Start with an **Intro** slide.
+   - Follow with **5-8 Quiz** slides.
+   - End with an **Outro** slide.
+3. **Quiz Content:**
+   - Questions should be interesting and testing knowledge.
+   - 4 options per question.
+   - **backgroundQuery:** MUST be 1-3 simple words describing the subject (e.g., "Eiffel Tower", "Elephant", "Pizza"). definitive visuals.
+   - **durationInSeconds:** Set to 7 for quiz slides.
+4. **Visuals:**
+   - Quiz slides use fullscreen images. Ensure the backgroundQuery is highly visual.
+5. **Format:** Return ONLY valid JSON.
+`;
+
 export async function POST(request: NextRequest) {
   try {
-    let prompt: string;
-    prompt = await getPrompt(request);
+    const { prompt, mode, orientation } = await getPrompt(request);
       
     // GEMINI API AI RESPONSE TIMELINE GENERATION
     const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
@@ -140,8 +193,10 @@ export async function POST(request: NextRequest) {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
+    const systemPrompt = mode === "quiz" ? QUIZ_SYSTEM_PROMPT : NORMAL_SYSTEM_PROMPT;
+
     const result = await model.generateContent([
-      SYSTEM_PROMPT,
+      systemPrompt,
       prompt,
     ]);
 
@@ -149,19 +204,29 @@ export async function POST(request: NextRequest) {
     const text = response.text();
     const cleanedText = cleanJsonResponse(text);
 
-    let timeline: Timeline;
+    let timeline: Timeline | QuizTimeline;
     try {
       timeline = JSON.parse(cleanedText);
-      // console.log('The Timeline (Raw):', JSON.stringify(timeline, null, 2));
+      console.log('POST TIMELINE:', JSON.stringify(timeline, null, 2));
+      // Ensure mode and orientation are set correctly on the timeline object
+      if (mode === "quiz") {
+          (timeline as any).mode = "quiz";
+          (timeline as any).orientation = orientation;
+      }
+      
+      console.log('Generated Timeline:', JSON.stringify(timeline, null, 2));
 
       // Post-process: Resolve Unsplash images
       const imageQueries: string[] = [];
       const imageSlides: number[] = [];
 
       // Identify image slides and collect queries
-      timeline.slides.forEach((slide, index) => {
+      timeline.slides.forEach((slide: any, index: number) => {
         if (slide.type === "image" && slide.imageQuery) {
           imageQueries.push(slide.imageQuery);
+          imageSlides.push(index);
+        } else if (slide.type === "quiz" && slide.backgroundQuery) {
+          imageQueries.push(slide.backgroundQuery);
           imageSlides.push(index);
         }
       });
@@ -169,25 +234,51 @@ export async function POST(request: NextRequest) {
       // Batch fetch from Unsplash if we have images
       if (imageQueries.length > 0) {
         console.log("Fetching Unsplash images for:", imageQueries);
-        const imagesMap = await batchSearchUnsplash(imageQueries);
+        // Pass orientation to searchUnsplash (batchSearchUnsplash needs update or we map manually)
+        // Since batchSearchUnsplash implementation in unsplash.ts uses searchUnsplash defaults (landscape), 
+        // we should ideally update batchSearchUnsplash to accept orientation or loop here.
+        // Let's loop here for finer control or update unsplash.ts. 
+        // For now, let's just use the batch function but we need to update unsplash.ts to support orientation in batch
+        // OR we just map over them here. 
+        
+        // Actually, let's map manually here to support orientation per request
+        const imagesMap = new Map();
+        await Promise.all(imageQueries.map(async (query, i) => {
+             // Add small delay to avoid rate limiting
+             await new Promise(r => setTimeout(r, i * 50));
+             
+             // Use the requested orientation for search
+             const searchOrientation = orientation === "portrait" ? "portrait" : "landscape";
+             
+             // We need to import searchUnsplash directly or use the batch one if we update it.
+             // Let's re-import searchUnsplash and use it directly.
+             const { searchUnsplash } = require("../../../lib/unsplash");
+             const image = await searchUnsplash(query, searchOrientation);
+             imagesMap.set(query, image);
+        }));
+
 
         // Update slides with resolved URLs
         for (let i = 0; i < imageSlides.length; i++) {
           const slideIndex = imageSlides[i];
           const query = imageQueries[i];
           const image = imagesMap.get(query);
-          const slide = timeline.slides[slideIndex];
+          const slide = timeline.slides[slideIndex] as any;
           
-          if (slide.type === "image" && image) {
-            slide.imageUrl = image.url;
-          //   // Optionally update caption if not provided or add credit
-          //   if (!slide.creditText) {
-          //       // @ts-ignore - Adding property that might not exist in strict type if not defined in prompt interface, but exists in our schema
-          //       slide.creditText = `Photo by ${image.photographer} / Unsplash`;
-          //   }
-          } else if (slide.type === "image") {
-              // Fallback if no image found (though fallback logic is in unsplash.ts too)
-              slide.imageUrl = `https://source.unsplash.com/1920x1080/?${encodeURIComponent(query)}`;
+          if (image) {
+             if (slide.type === "image") {
+                slide.imageUrl = image.url;
+             } else if (slide.type === "quiz") {
+                slide.backgroundUrl = image.url;
+             }
+          } else {
+              // Fallback
+              const fallbackUrl = `https://source.unsplash.com/${orientation === 'portrait' ? '1080x1920' : '1920x1080'}/?${encodeURIComponent(query)}`;
+              if (slide.type === "image") {
+                  slide.imageUrl = fallbackUrl;
+              } else if (slide.type === "quiz") {
+                  slide.backgroundUrl = fallbackUrl;
+              }
           }
         }
       }
@@ -212,7 +303,7 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const prompt = await getPrompt(request, true);
+    const { prompt, mode, orientation } = await getPrompt(request, true);
 
     // GEMINI API
     const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
@@ -226,9 +317,11 @@ export async function PATCH(request: NextRequest) {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
+    const systemPrompt = mode === "quiz" ? QUIZ_SYSTEM_PROMPT : NORMAL_SYSTEM_PROMPT;
+
     // Reuse SYSTEM_PROMPT to ensure valid JSON output
     const result = await model.generateContent([
-      SYSTEM_PROMPT, 
+      systemPrompt, 
       prompt
     ]);
 
@@ -236,12 +329,19 @@ export async function PATCH(request: NextRequest) {
     const text = response.text();
     const cleanedText = cleanJsonResponse(text);
 
-    let newTimeline: Timeline;
+    let newTimeline: Timeline | QuizTimeline;
     try {
       newTimeline = JSON.parse(cleanedText);
+      
+      // Ensure specific fields are preserved/set
+      if (mode === "quiz") {
+         (newTimeline as any).mode = "quiz";
+         (newTimeline as any).orientation = orientation;
+      }
+      
       console.log('Edited Timeline:', JSON.stringify(newTimeline, null, 2));
 
-      // Post-process: Resolve Unsplash images (same logic as POST)
+      // Post-process: Resolve Unsplash images
       const imageQueries: string[] = [];
       const imageSlides: number[] = [];
 
@@ -249,23 +349,44 @@ export async function PATCH(request: NextRequest) {
         if (slide.type === "image" && slide.imageQuery) {
           imageQueries.push(slide.imageQuery);
           imageSlides.push(index);
+        } else if (slide.type === "quiz" && slide.backgroundQuery) {
+          imageQueries.push(slide.backgroundQuery);
+          imageSlides.push(index);
         }
       });
 
       if (imageQueries.length > 0) {
         console.log("Fetching Unsplash images for edits:", imageQueries);
-        const imagesMap = await batchSearchUnsplash(imageQueries);
+        
+        // Manual batch fetch (same as POST)
+        const imagesMap = new Map();
+        await Promise.all(imageQueries.map(async (query, i) => {
+             await new Promise(r => setTimeout(r, i * 50));
+             const searchOrientation = orientation === "portrait" ? "portrait" : "landscape";
+             const { searchUnsplash } = require("../../../lib/unsplash");
+             const image = await searchUnsplash(query, searchOrientation);
+             imagesMap.set(query, image);
+        }));
 
         for (let i = 0; i < imageSlides.length; i++) {
           const slideIndex = imageSlides[i];
           const query = imageQueries[i];
           const image = imagesMap.get(query);
-          const slide = newTimeline.slides[slideIndex];
+          const slide = newTimeline.slides[slideIndex] as any;
           
-          if (slide.type === "image" && image) {
-            slide.imageUrl = image.url;
-          } else if (slide.type === "image") {
-              slide.imageUrl = `https://source.unsplash.com/1920x1080/?${encodeURIComponent(query)}`;
+          if (image) {
+             if (slide.type === "image") {
+                slide.imageUrl = image.url;
+             } else if (slide.type === "quiz") {
+                slide.backgroundUrl = image.url;
+             }
+          } else {
+             const fallbackUrl = `https://source.unsplash.com/${orientation === 'portrait' ? '1080x1920' : '1920x1080'}/?${encodeURIComponent(query)}`;
+              if (slide.type === "image") {
+                  slide.imageUrl = fallbackUrl;
+              } else if (slide.type === "quiz") {
+                  slide.backgroundUrl = fallbackUrl;
+              }
           }
         }
       }

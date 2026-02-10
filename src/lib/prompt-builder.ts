@@ -85,18 +85,33 @@ ${JSON.stringify(timeline, null, 2)}
 Return the modified JSON object.`;
 }
 
-export const getPrompt = async (request: NextRequest, isEdit: boolean = false): Promise<string> => {
+export interface PromptResult {
+  prompt: string;
+  mode: "normal" | "quiz";
+  orientation: "landscape" | "portrait";
+}
+
+export const getPrompt = async (request: NextRequest, isEdit: boolean = false): Promise<PromptResult> => {
 
     const contentType = request.headers.get("content-type") || "";
     
     let prompt: string; 
     let pdfText: string | undefined;
     let pdfMetadata: { title?: string; pageCount: number } | undefined;
+    
+    // Defaults
+    let mode: "normal" | "quiz" = "normal";
+    let orientation: "landscape" | "portrait" = "landscape";
 
     if(contentType.includes("multipart/form-data")){
       const formData = await request.formData();
       const pdfFile = formData.get("pdf") as File | null;
       const userPrompt = formData.get("prompt") as string | null;
+      const modeParam = formData.get("mode") as string | null;
+      const orientationParam = formData.get("orientation") as string | null;
+
+      if (modeParam === "quiz") mode = "quiz";
+      if (orientationParam === "portrait") orientation = "portrait";
       
       // Validate that either PDF or prompt is provided (or just timeline for edit?)
       if (!pdfFile && !userPrompt) {
@@ -105,16 +120,14 @@ export const getPrompt = async (request: NextRequest, isEdit: boolean = false): 
       
       // If PDF is present, extract its content
       if (pdfFile) {
-        // File size validation (10MB = 10 * 1024 * 1024 bytes)
+        // ... (existing PDF extraction logic remains same)
         const MAX_FILE_SIZE = 10 * 1024 * 1024;
         if (pdfFile.size > MAX_FILE_SIZE) {
           throw new Error("File size exceeds 10MB limit");
         }
         
-        // Convert File to ArrayBuffer for processing
         const arrayBuffer = await pdfFile.arrayBuffer();
         
-        // Extract PDF content
         try {
           const extractedContent = await extractPDFContent(arrayBuffer);
           pdfText = extractedContent.text;
@@ -136,6 +149,9 @@ export const getPrompt = async (request: NextRequest, isEdit: boolean = false): 
         let timeline;
         try {
             timeline = JSON.parse(timelineJson);
+            // Preserve mode/orientation from existing timeline if not explicitly overridden (though edit usually preserves)
+            if (timeline.mode) mode = timeline.mode;
+            if (timeline.orientation) orientation = timeline.orientation;
         } catch (e) {
             throw new Error("Invalid timeline JSON");
         }
@@ -144,7 +160,8 @@ export const getPrompt = async (request: NextRequest, isEdit: boolean = false): 
         if (pdfText) {
             fullInstruction += `\n\nReference Document Context:\n${pdfText}`;
         }
-        return buildEditPrompt(timeline, fullInstruction);
+        prompt = buildEditPrompt(timeline, fullInstruction);
+        return { prompt, mode, orientation };
       }
       
       // Build prompt using the prompt builder utility
@@ -153,16 +170,31 @@ export const getPrompt = async (request: NextRequest, isEdit: boolean = false): 
         pdfMetadata,
         userPrompt: userPrompt || undefined,
       });  
+
+      // For quiz mode, modify the prompt slightly to ensure context
+      if (mode === "quiz") {
+        prompt = `Create a quiz video about: ${userPrompt || (pdfMetadata ? pdfMetadata.title : "the content")}. ${prompt}`;
+      }
+
     } else {
-      // Handle JSON request (backward compatibility for text-only mode)
+      // Handle JSON request
       const body = await request.json();
       
+      if (body.mode === "quiz") mode = "quiz";
+      if (body.orientation === "portrait") orientation = "portrait";
+
       if (isEdit) {
          const { timeline, editPrompt } = body;
          if (!timeline || !editPrompt) {
             throw new Error("Timeline and editPrompt are required");
          }
-         return buildEditPrompt(timeline, editPrompt);
+         
+         // Preserve existing mode/orientation from timeline
+         if (timeline.mode) mode = timeline.mode;
+         if (timeline.orientation) orientation = timeline.orientation;
+
+         prompt = buildEditPrompt(timeline, editPrompt);
+         return { prompt, mode, orientation };
       }
 
       const userPrompt = body.prompt;
@@ -172,6 +204,11 @@ export const getPrompt = async (request: NextRequest, isEdit: boolean = false): 
       
       // Build prompt for text-only mode
       prompt = buildPrompt({ userPrompt });
+
+      if (mode === "quiz") {
+        prompt = `Create a quiz video about: ${userPrompt}. ${prompt}`;
+      }
     }
-      return prompt
+      
+    return { prompt, mode, orientation };
 }
