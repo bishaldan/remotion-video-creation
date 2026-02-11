@@ -3,6 +3,9 @@
  * Requires UNSPLASH_ACCESS_KEY environment variable
  */
 
+import { Timeline } from "../../types/edu";
+import { QuizTimeline, SingleQuizTimeline } from "../../types/quiz";
+
 const UNSPLASH_API_URL = "https://api.unsplash.com";
 
 export interface UnsplashImage {
@@ -96,7 +99,8 @@ function getPlaceholderImage(query: string): UnsplashImage {
  * Batch fetch multiple images for a timeline
  */
 export async function batchSearchUnsplash(
-  queries: string[]
+  queries: string[],
+  orientation: "landscape" | "portrait" | "squarish" = "landscape"
 ): Promise<Map<string, UnsplashImage | null>> {
   const results = new Map<string, UnsplashImage | null>();
   
@@ -104,10 +108,61 @@ export async function batchSearchUnsplash(
   const promises = queries.map(async (query, index) => {
     // Stagger requests by 100ms each
     await new Promise((resolve) => setTimeout(resolve, index * 100));
-    const image = await searchUnsplash(query);
+    const image = await searchUnsplash(query, orientation);
     results.set(query, image);
   });
 
   await Promise.all(promises);
   return results;
+}
+
+export async function setImagesUrl(timeline: Timeline | QuizTimeline | SingleQuizTimeline, orientation: "landscape" | "portrait" | "squarish" = "landscape") {
+      const imageQueries: string[] = [];
+      const imageSlides: number[] = [];
+
+      // Identify image slides and collect queries
+      timeline.slides.forEach((slide: any, index: number) => {
+        if (slide.type === "image" && slide.imageQuery) {
+          imageQueries.push(slide.imageQuery);
+          imageSlides.push(index);
+        } else if (slide.type === "quiz" && slide.backgroundQuery) {
+          imageQueries.push(slide.backgroundQuery);
+          imageSlides.push(index);
+        } else if (slide.type === "singleQuiz" && slide.imageQuery) {
+          imageQueries.push(slide.imageQuery);
+          imageSlides.push(index);
+        }
+      });
+
+      // Batch fetch from Unsplash
+      if (imageQueries.length > 0) {
+        console.log("Fetching Unsplash images for:", imageQueries);
+        
+        const imagesMap = await batchSearchUnsplash(imageQueries, orientation);
+        // await Promise.all(imageQueries.map(async (query, i) => {
+        //      await new Promise(r => setTimeout(r, i * 50));
+        //      const searchOrientation = orientation === "portrait" ? "portrait" : "landscape";
+        //      const image = await batchSearchUnsplash(query, searchOrientation);
+        //      imagesMap.set(query, image);
+        // }));
+
+        // Update slides with resolved URLs
+        for (let i = 0; i < imageSlides.length; i++) {
+          const slideIndex = imageSlides[i];
+          const query = imageQueries[i];
+          const image = imagesMap.get(query);
+          const slide = timeline.slides[slideIndex] as any;
+          
+          if (image) {
+             if (slide.type === "image") slide.imageUrl = image.url;
+             else if (slide.type === "quiz") slide.backgroundUrl = image.url;
+             else if (slide.type === "singleQuiz") slide.imageUrl = image.url;
+          } else {
+              const fallbackUrl = `https://source.unsplash.com/${orientation === 'portrait' ? '1080x1920' : '1920x1080'}/?${encodeURIComponent(query)}`;
+              if (slide.type === "image") slide.imageUrl = fallbackUrl;
+              else if (slide.type === "quiz") slide.backgroundUrl = fallbackUrl;
+              else if (slide.type === "singleQuiz") slide.imageUrl = fallbackUrl;
+          }
+        }
+      }
 }
