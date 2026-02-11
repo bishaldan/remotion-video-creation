@@ -10,6 +10,7 @@ export const QuizQuestionSchema = z.object({
   backgroundQuery: z.string(),
   backgroundUrl: z.string().optional(),
   durationInSeconds: z.number().default(5),
+  narrationUrl: z.string().optional(),
 });
 
 export const DualQuizTimelineSchema = z.object({
@@ -27,7 +28,7 @@ export const DualQuizTimelineSchema = z.object({
 export type QuizQuestion = z.infer<typeof QuizQuestionSchema>;
 export type QuizTimeline = z.infer<typeof DualQuizTimelineSchema>;
 
-export const defaulDualtQuizTimeline: QuizTimeline = {
+export const defaultDualQuizTimeline: QuizTimeline = {
   title: "Solar System Quiz",
   mode: "quiz",
   orientation: "landscape",
@@ -39,6 +40,7 @@ export const defaulDualtQuizTimeline: QuizTimeline = {
       subtitle: "Test your knowledge!",
       author: "Remotion Quiz",
       durationInSeconds: 5,
+      narrationUrl: "/audio/test-dual-quiz-slide-0.mp3",
     },
     {
       type: "quiz",
@@ -48,6 +50,7 @@ export const defaulDualtQuizTimeline: QuizTimeline = {
       backgroundQuery: "Mars planet space",
       backgroundUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/OSIRIS_Mars_true_color.jpg/1920px-OSIRIS_Mars_true_color.jpg",
       durationInSeconds: 7,
+      narrationUrl: "/audio/test-dual-quiz-slide-1.mp3",
     },
     {
       type: "quiz",
@@ -57,12 +60,14 @@ export const defaulDualtQuizTimeline: QuizTimeline = {
       backgroundQuery: "Jupiter planet space",
       backgroundUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Jupiter.jpg/1920px-Jupiter.jpg",
       durationInSeconds: 7,
+      narrationUrl: "/audio/test-dual-quiz-slide-2.mp3",
     },
     {
       type: "outro",
       title: "Great Job!",
       callToAction: "Follow for more quizzes",
       durationInSeconds: 5,
+      narrationUrl: "/audio/test-dual-quiz-slide-3.mp3",
     }
   ],
 };
@@ -84,6 +89,7 @@ export const SingleQuizQuestionSchema = z.object({
   imageUrl: z.string().optional(),
   backgroundColor: z.string().optional(),
   durationInSeconds: z.number().default(10),
+  narrationUrl: z.string().optional(),
 });
 
 export const SingleQuizTimelineSchema = z.object({
@@ -116,6 +122,7 @@ export const defaultSingleQuizTimeline: SingleQuizTimeline = {
       author: "QuizMaster",
       backgroundColor: "#1a1a2e",
       durationInSeconds: 5,
+      narrationUrl: "/audio/test-single-quiz-slide-0.mp3",
     },
     {
       type: "singleQuiz",
@@ -126,6 +133,7 @@ export const defaultSingleQuizTimeline: SingleQuizTimeline = {
       imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Blausen_0863_ToothAnatomy_02.png/800px-Blausen_0863_ToothAnatomy_02.png",
       backgroundColor: SINGLE_QUIZ_COLORS[0],
       durationInSeconds: 10,
+      narrationUrl: "/audio/test-single-quiz-slide-1.mp3",
     },
     {
       type: "singleQuiz",
@@ -136,6 +144,7 @@ export const defaultSingleQuizTimeline: SingleQuizTimeline = {
       imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Mercury_in_color_-_Prockter07-edit1.jpg/800px-Mercury_in_color_-_Prockter07-edit1.jpg",
       backgroundColor: SINGLE_QUIZ_COLORS[1],
       durationInSeconds: 10,
+      narrationUrl: "/audio/test-single-quiz-slide-2.mp3",
     },
     {
       type: "outro",
@@ -143,6 +152,7 @@ export const defaultSingleQuizTimeline: SingleQuizTimeline = {
       callToAction: "How many did you get right? Share your score!",
       backgroundColor: "#1a1a2e",
       durationInSeconds: 5,
+      narrationUrl: "/audio/test-single-quiz-slide-3.mp3",
     },
   ],
 };

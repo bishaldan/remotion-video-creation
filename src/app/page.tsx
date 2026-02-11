@@ -12,7 +12,7 @@ import {
   type Timeline
 } from "../../types/edu";
 import {
-  defaulDualtQuizTimeline,
+  defaultDualQuizTimeline,
   defaultSingleQuizTimeline,
   DualQuizTimelineSchema,
   QUIZ_COMP_LANDSCAPE,
@@ -43,7 +43,7 @@ const Home: NextPage = () => {
   
   // THESE 3 are of persisting the state of the timeline so that it doesnt reset to default on re-render
   let [singleQuizTimelineState, setSingleQuizTimelineState] = useState<SingleQuizTimeline>(defaultSingleQuizTimeline);
-  let [dualQuizTimelineState, setDualQuizTimelineState] = useState<QuizTimeline>(defaulDualtQuizTimeline);
+  let [dualQuizTimelineState, setDualQuizTimelineState] = useState<QuizTimeline>(defaultDualQuizTimeline);
   let [eduTimelineState, setEduTimelineState] = useState<Timeline>(defaultEduCompProps);
 
   //Main States
@@ -777,6 +777,7 @@ const Home: NextPage = () => {
                       (orientation === "portrait" ? "9/16" : "16/9"))
               }}
               controls
+              acknowledgeRemotionLicense={true}
             />
           </div>
         </div>

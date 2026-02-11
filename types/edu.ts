@@ -11,6 +11,7 @@ export const TextSlideSchema = z.object({
   color: z.string().optional(),
   backgroundColor: z.string().optional(),
   durationInSeconds: z.number().default(5),
+  narrationUrl: z.string().optional(),
 });
 
 export const BulletSlideSchema = z.object({
@@ -22,6 +23,7 @@ export const BulletSlideSchema = z.object({
   bulletColor: z.string().optional(),
   backgroundColor: z.string().optional(),
   durationInSeconds: z.number().default(5),
+  narrationUrl: z.string().optional(),
 });
 
 export const DiagramNodeSchema = z.object({
@@ -47,6 +49,7 @@ export const DiagramSlideSchema = z.object({
   arrows: z.array(DiagramArrowSchema),
   backgroundColor: z.string().optional(),
   durationInSeconds: z.number().default(6),
+  narrationUrl: z.string().optional(),
 });
 
 export const ThreeDObjectSchema = z.object({
@@ -70,6 +73,7 @@ export const ThreeDSlideSchema = z.object({
   color: z.string().optional(),
   backgroundColor: z.string().optional(),
   durationInSeconds: z.number().default(5),
+  narrationUrl: z.string().optional(),
 });
 
 export const ImageSlideSchema = z.object({
@@ -81,6 +85,7 @@ export const ImageSlideSchema = z.object({
   creditText: z.string().optional(),
   backgroundColor: z.string().optional(),
   durationInSeconds: z.number().default(5),
+  narrationUrl: z.string().optional(),
 });
 
 export const LottieSlideSchema = z.object({
@@ -92,6 +97,7 @@ export const LottieSlideSchema = z.object({
   position: z.enum(["left", "right"]).default("left"),
   backgroundColor: z.string().optional(),
   durationInSeconds: z.number().default(6),
+  narrationUrl: z.string().optional(),
 });
 
 export const SlideSchema = z.discriminatedUnion("type", [
@@ -124,6 +130,7 @@ export const defaultEduCompProps: Timeline = {
       subtitle: "Exploring New Horizons with AI",
       author: "Remotion Series",
       durationInSeconds: 5,
+      narrationUrl: "/audio/test-education-slide-0.mp3",
     },
     {
       type: "lottie",
@@ -132,6 +139,7 @@ export const defaultEduCompProps: Timeline = {
       text: "This video uses AI-generated content with animated characters to make learning fun and engaging.",
       position: "left",
       durationInSeconds: 5,
+      narrationUrl: "/audio/test-education-slide-1.mp3",
     },
     {
       type: "bullets",
@@ -143,6 +151,7 @@ export const defaultEduCompProps: Timeline = {
         "Add images and **Lottie animations**",
       ],
       durationInSeconds: 4,
+      narrationUrl: "/audio/test-education-slide-2.mp3",
     },
     {
       type: "image",
@@ -151,12 +160,14 @@ export const defaultEduCompProps: Timeline = {
       kenBurns: "zoomIn",
       creditText: "Unsplash",
       durationInSeconds: 4,
+      narrationUrl: "/audio/test-education-slide-3.mp3",
     },
     {
       type: "outro",
       title: "Thanks for Watching!",
       callToAction: "Created with Remotion SaaS",
       durationInSeconds: 5,
+      narrationUrl: "/audio/test-education-slide-4.mp3",
     }
   ],
 };

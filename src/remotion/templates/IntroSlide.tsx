@@ -1,11 +1,13 @@
 import { fontFamily, loadFont } from "@remotion/google-fonts/Inter";
 import React from "react";
 import {
-    AbsoluteFill,
-    interpolate,
-    spring,
-    useCurrentFrame,
-    useVideoConfig,
+  AbsoluteFill,
+  Html5Audio,
+  interpolate,
+  spring,
+  staticFile,
+  useCurrentFrame,
+  useVideoConfig,
 } from "remotion";
 import { GRADIENT_PRESETS, parseBackground } from "../utils/backgrounds";
 
@@ -19,6 +21,7 @@ export interface IntroSlideProps {
   subtitle?: string;
   author?: string;
   backgroundColor?: string;
+  narrationUrl?: string;
 }
 
 export const IntroSlide: React.FC<IntroSlideProps> = ({
@@ -26,6 +29,7 @@ export const IntroSlide: React.FC<IntroSlideProps> = ({
   subtitle,
   author,
   backgroundColor = GRADIENT_PRESETS.darkSpace,
+  narrationUrl,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -137,6 +141,7 @@ export const IntroSlide: React.FC<IntroSlideProps> = ({
           By {author}
         </div>
       )}
+      {narrationUrl && <Html5Audio src={staticFile(narrationUrl)} />}
     </AbsoluteFill>
   );
 };

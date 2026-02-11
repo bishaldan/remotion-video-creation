@@ -2,13 +2,12 @@ import { fontFamily, loadFont } from "@remotion/google-fonts/Inter";
 import { Lottie, LottieAnimationData } from "@remotion/lottie";
 import React, { useEffect, useState } from "react";
 import {
-  AbsoluteFill,
-  continueRender,
-  delayRender,
-  interpolate,
-  spring,
-  useCurrentFrame,
-  useVideoConfig
+    AbsoluteFill, continueRender,
+    delayRender, Html5Audio, interpolate,
+    spring,
+    staticFile,
+    useCurrentFrame,
+    useVideoConfig
 } from "remotion";
 import { GRADIENT_PRESETS, parseBackground } from "../utils/backgrounds";
 
@@ -43,6 +42,7 @@ export interface LottieSlideProps {
   title?: string;
   position?: "left" | "right";
   backgroundColor?: string;
+  narrationUrl?: string;
 }
 
 export const LottieSlide: React.FC<LottieSlideProps> = ({
@@ -52,6 +52,7 @@ export const LottieSlide: React.FC<LottieSlideProps> = ({
   title,
   position = "left",
   backgroundColor = GRADIENT_PRESETS.purpleBlue,
+  narrationUrl,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -218,6 +219,7 @@ export const LottieSlide: React.FC<LottieSlideProps> = ({
           </p>
         </div>
       </div>
+      {narrationUrl && <Html5Audio src={staticFile(narrationUrl)} />}
     </AbsoluteFill>
   );
 };

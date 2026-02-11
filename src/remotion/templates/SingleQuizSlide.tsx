@@ -1,13 +1,14 @@
 import { fontFamily, loadFont } from "@remotion/google-fonts/Inter";
 import React, { useMemo } from "react";
 import {
-    AbsoluteFill,
-    Img,
-    interpolate,
-    interpolateColors,
-    spring,
-    useCurrentFrame,
-    useVideoConfig,
+  AbsoluteFill,
+  Html5Audio,
+  Img,
+  interpolate,
+  interpolateColors,
+  spring,
+  useCurrentFrame,
+  useVideoConfig
 } from "remotion";
 
 loadFont("normal", {
@@ -25,6 +26,7 @@ export interface SingleQuizSlideProps {
   durationInSeconds?: number;
   questionNumber: number; // passed from Main composition
   quizTitle: string;      // passed from Main composition
+  narrationUrl?: string;
 }
 
 // ── Bubble Component ─────────────────────────────────────────────
@@ -80,6 +82,7 @@ export const SingleQuizSlide: React.FC<SingleQuizSlideProps> = ({
   durationInSeconds = 10,
   questionNumber,
   quizTitle,
+  narrationUrl,
 }) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
@@ -418,6 +421,7 @@ export const SingleQuizSlide: React.FC<SingleQuizSlideProps> = ({
           zIndex: 20,
         }}
       />
+      {narrationUrl && <Html5Audio src={narrationUrl} />}
     </AbsoluteFill>
   );
 };

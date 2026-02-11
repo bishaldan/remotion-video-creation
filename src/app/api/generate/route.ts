@@ -8,6 +8,7 @@ import {
   QUIZ_SYSTEM_PROMPT,
   SINGLE_QUIZ_SYSTEM_PROMPT
 } from "../../../lib/prompts";
+import { setNarrationUrls } from "../../../lib/tts";
 import { setImagesUrl } from "../../../lib/unsplash";
 import { cleanJsonResponse } from "../../../lib/utils";
 
@@ -60,6 +61,7 @@ export async function POST(request: NextRequest) {
 
       
       await setImagesUrl(timeline, orientation);
+      await setNarrationUrls(timeline);
 
     } catch (parseError) {
       console.error("JSON Parse Error:", parseError, "Text:", text);
@@ -125,6 +127,7 @@ export async function PATCH(request: NextRequest) {
       console.log('Edited Timeline:', JSON.stringify(newTimeline, null, 2));
 
       await setImagesUrl(newTimeline, orientation);
+      await setNarrationUrls(newTimeline);
 
       return NextResponse.json({ timeline: newTimeline });
 

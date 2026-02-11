@@ -1,10 +1,13 @@
 import { fontFamily, loadFont } from "@remotion/google-fonts/Inter";
 import React from "react";
 import {
-    AbsoluteFill, Img, interpolate,
+    AbsoluteFill,
+    Html5Audio,
+    Img, interpolate,
     spring,
+    staticFile,
     useCurrentFrame,
-    useVideoConfig
+    useVideoConfig,
 } from "remotion";
 import { GRADIENT_PRESETS, parseBackground } from "../utils/backgrounds";
 
@@ -21,6 +24,7 @@ export interface ImageSlideProps {
   kenBurns?: KenBurnsEffect;
   backgroundColor?: string;
   creditText?: string;
+  narrationUrl?: string;
 }
 
 export const ImageSlide: React.FC<ImageSlideProps> = ({
@@ -29,6 +33,7 @@ export const ImageSlide: React.FC<ImageSlideProps> = ({
   kenBurns = "zoomIn",
   backgroundColor = GRADIENT_PRESETS.darkSpace,
   creditText,
+  narrationUrl,
 }) => {
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
@@ -162,6 +167,7 @@ export const ImageSlide: React.FC<ImageSlideProps> = ({
           Photo: {creditText}
         </div>
       )}
+      {narrationUrl && <Html5Audio src={staticFile(narrationUrl)} />}
     </AbsoluteFill>
   );
 };

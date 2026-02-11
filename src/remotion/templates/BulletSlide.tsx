@@ -1,10 +1,12 @@
 import { fontFamily, loadFont } from "@remotion/google-fonts/Inter";
 import React from "react";
 import {
-  AbsoluteFill,
-  interpolate,
-  useCurrentFrame,
-  useVideoConfig,
+    AbsoluteFill,
+    Html5Audio,
+    interpolate,
+    staticFile,
+    useCurrentFrame,
+    useVideoConfig,
 } from "remotion";
 import { GRADIENT_PRESETS, parseBackground } from "../utils/backgrounds";
 
@@ -20,6 +22,7 @@ export interface BulletSlideProps {
   titleColor?: string;
   bulletColor?: string;
   backgroundColor?: string;
+  narrationUrl?: string;
 }
 
 export const BulletSlide: React.FC<BulletSlideProps> = ({
@@ -29,6 +32,7 @@ export const BulletSlide: React.FC<BulletSlideProps> = ({
   titleColor = "#ffffff",
   bulletColor = "#e2e8f0",
   backgroundColor = GRADIENT_PRESETS.purpleBlue,
+  narrationUrl,
 }) => {
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
@@ -139,6 +143,7 @@ export const BulletSlide: React.FC<BulletSlideProps> = ({
           );
         })}
       </ul>
+      {narrationUrl && <Html5Audio src={staticFile(narrationUrl)} />}
     </AbsoluteFill>
   );
 };

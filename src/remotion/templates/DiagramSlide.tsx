@@ -2,7 +2,9 @@ import { fontFamily, loadFont } from "@remotion/google-fonts/Inter";
 import React, { useMemo } from "react";
 import {
     AbsoluteFill,
+    Html5Audio,
     interpolate,
+    staticFile,
     useCurrentFrame,
     useVideoConfig,
 } from "remotion";
@@ -34,6 +36,7 @@ export interface DiagramSlideProps {
   nodes: DiagramNode[];
   arrows: DiagramArrow[];
   backgroundColor?: string;
+  narrationUrl?: string;
 }
 
 // Auto-layout configuration
@@ -47,6 +50,7 @@ export const DiagramSlide: React.FC<DiagramSlideProps> = ({
   nodes,
   arrows,
   backgroundColor = GRADIENT_PRESETS.midnight,
+  narrationUrl,
 }) => {
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
@@ -325,6 +329,7 @@ export const DiagramSlide: React.FC<DiagramSlideProps> = ({
           );
         })}
       </div>
+      {narrationUrl && <Html5Audio src={staticFile(narrationUrl)} />}
     </AbsoluteFill>
   );
 };

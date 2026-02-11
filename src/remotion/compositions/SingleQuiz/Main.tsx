@@ -28,6 +28,7 @@ export const SingleQuizMain: React.FC<z.infer<typeof SingleQuizTimelineSchema>> 
             subtitle={slide.subtitle}
             author={slide.author}
             backgroundColor={slide.backgroundColor}
+            narrationUrl={slide.narrationUrl}
           />
         );
       case "singleQuiz":
@@ -42,6 +43,7 @@ export const SingleQuizMain: React.FC<z.infer<typeof SingleQuizTimelineSchema>> 
             durationInSeconds={slide.durationInSeconds}
             questionNumber={qNum}
             quizTitle={title}
+            narrationUrl={slide.narrationUrl}
           />
         );
       case "outro":
@@ -50,6 +52,7 @@ export const SingleQuizMain: React.FC<z.infer<typeof SingleQuizTimelineSchema>> 
             title={slide.title}
             callToAction={slide.callToAction}
             backgroundColor={slide.backgroundColor}
+            narrationUrl={slide.narrationUrl}
           />
         );
       default:

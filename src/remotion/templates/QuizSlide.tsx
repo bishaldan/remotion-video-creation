@@ -1,13 +1,15 @@
 import { fontFamily, loadFont } from "@remotion/google-fonts/Inter";
 import React from "react";
 import {
-    AbsoluteFill,
-    Img,
-    interpolate,
-    interpolateColors,
-    spring,
-    useCurrentFrame,
-    useVideoConfig,
+  AbsoluteFill,
+  Audio,
+  Html5Audio,
+  Img,
+  interpolate,
+  interpolateColors,
+  spring,
+  useCurrentFrame,
+  useVideoConfig,
 } from "remotion";
 
 loadFont("normal", {
@@ -22,6 +24,7 @@ export interface QuizSlideProps {
   backgroundUrl?: string; // Resolved URL
   backgroundQuery?: string; // Fallback
   durationInSeconds?: number;
+  narrationUrl?: string;
 }
 
 export const DualQuizSlide: React.FC<QuizSlideProps> = ({
@@ -31,6 +34,7 @@ export const DualQuizSlide: React.FC<QuizSlideProps> = ({
   backgroundUrl,
   backgroundQuery,
   durationInSeconds = 7,
+  narrationUrl,
 }) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
@@ -218,6 +222,7 @@ export const DualQuizSlide: React.FC<QuizSlideProps> = ({
             width: `${(frame / (durationInSeconds * fps)) * 100}%`
         }} />
 
+        {narrationUrl && <Html5Audio src={narrationUrl} />}
       </AbsoluteFill>
     </AbsoluteFill>
   );

@@ -33,6 +33,7 @@ export const EduMain: React.FC<z.infer<typeof TimelineSchema>> = ({
             fontSize={slide.fontSize}
             color={slide.color}
             backgroundColor={slide.backgroundColor}
+            narrationUrl={slide.narrationUrl}
           />
         );
       case "bullets":
@@ -44,6 +45,7 @@ export const EduMain: React.FC<z.infer<typeof TimelineSchema>> = ({
             titleColor={slide.titleColor}
             bulletColor={slide.bulletColor}
             backgroundColor={slide.backgroundColor}
+            narrationUrl={slide.narrationUrl}
           />
         );
       case "diagram":
@@ -53,6 +55,7 @@ export const EduMain: React.FC<z.infer<typeof TimelineSchema>> = ({
             nodes={slide.nodes}
             arrows={slide.arrows}
             backgroundColor={slide.backgroundColor}
+            narrationUrl={slide.narrationUrl}
           />
         );
       case "threeD":
@@ -64,6 +67,7 @@ export const EduMain: React.FC<z.infer<typeof TimelineSchema>> = ({
             shape={slide.shape}
             color={slide.color}
             backgroundColor={slide.backgroundColor}
+            narrationUrl={slide.narrationUrl}
           />
         );
       case "image":
@@ -74,6 +78,7 @@ export const EduMain: React.FC<z.infer<typeof TimelineSchema>> = ({
             kenBurns={slide.kenBurns}
             creditText={slide.creditText}
             backgroundColor={slide.backgroundColor}
+            narrationUrl={slide.narrationUrl}
           />
         );
       case "lottie":
@@ -85,6 +90,7 @@ export const EduMain: React.FC<z.infer<typeof TimelineSchema>> = ({
             title={slide.title}
             position={slide.position}
             backgroundColor={slide.backgroundColor}
+            narrationUrl={slide.narrationUrl}
           />
         );
       case "intro":
@@ -94,6 +100,7 @@ export const EduMain: React.FC<z.infer<typeof TimelineSchema>> = ({
             subtitle={slide.subtitle}
             author={slide.author}
             backgroundColor={slide.backgroundColor}
+            narrationUrl={slide.narrationUrl}
           />
         );
       case "outro":
@@ -102,6 +109,7 @@ export const EduMain: React.FC<z.infer<typeof TimelineSchema>> = ({
             title={slide.title}
             callToAction={slide.callToAction}
             backgroundColor={slide.backgroundColor}
+            narrationUrl={slide.narrationUrl}
           />
         );
       default:
