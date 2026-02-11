@@ -154,12 +154,12 @@ interface QuizTimeline {
    - Questions should be interesting and testing knowledge.
    - 4 options per question.
    - **backgroundQuery:** MUST be 1-3 simple words describing the subject (e.g., "Eiffel Tower", "Elephant", "Pizza"). definitive visuals.
-  - **durationInSeconds:** (ONLY FOR QUIZ SLIDES) Calculate using the formula: \`((wordcount of question + number of options) / 2) + 7\`. Do not use round/ceil/floor.
+   - **durationInSeconds:** Set to 10 for all quiz slides (this will be automatically adjusted based on narration audio length).
   4. **Visuals:**
    - Quiz slides use fullscreen images. Ensure the backgroundQuery is highly visual.
    -Intro and Outro backgroundColor: Use dark, modern gradients. **DO NOT** use white (#ffffff) or plain black (#000000).
       Examples: "linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%)", "linear-gradient(135deg, #2d1b4e 0%, #0f0f1a 100%)".
-  5. **durationInSeconds:** 5 seconds for intro and outro slides.
+  5. **durationInSeconds:** (total_word_on_title_and_call_To_Action/2)+1 seconds for intro and outro slides.
   6. **Format:** Return ONLY valid JSON.
 `;
 
@@ -216,7 +216,7 @@ interface SingleQuizTimeline {
    - **backgroundColor:** Pick a VIBRANT color for each slide (e.g., "#c2185b", "#7b1fa2", "#1565c0", "#00838f"). Vary them!
    - **Intro and Outro backgroundColor:** Use dark, modern gradients. **DO NOT** use white (#ffffff) or plain black (#000000).
         *Examples: "linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%)", "linear-gradient(135deg, #2d1b4e 0%, #0f0f1a 100%)".
-   - **durationInSeconds:** (ONLY FOR QUIZ SLIDES) Calculate using the formula: \`((wordcount of question + number of options) / 2) + 7\`. Do not use round/ceil/floor.
-   - **durationInSeconds:** 5 seconds for intro and outro slides.
+   - **durationInSeconds:** Set to 10 for all quiz slides (this will be automatically adjusted based on narration audio length).
+   - **durationInSeconds:** (total_word_on_title_and_call_To_Action/2)+1 seconds for intro and outro slides.
    4. **Format:** Return ONLY valid JSON.
 `;

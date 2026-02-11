@@ -6,32 +6,32 @@ import type { NextPage } from "next";
 import { useCallback, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import {
-  defaultEduCompProps,
-  EDU_COMP_NAME,
-  TimelineSchema,
-  type Timeline
+    defaultEduCompProps,
+    EDU_COMP_NAME,
+    TimelineSchema,
+    type Timeline
 } from "../../types/edu";
 import {
-  defaultDualQuizTimeline,
-  defaultSingleQuizTimeline,
-  DualQuizTimelineSchema,
-  QUIZ_COMP_LANDSCAPE,
-  QUIZ_COMP_PORTRAIT,
-  QUIZ_HEIGHT_LANDSCAPE,
-  QUIZ_HEIGHT_PORTRAIT,
-  QUIZ_WIDTH_LANDSCAPE,
-  QUIZ_WIDTH_PORTRAIT,
-  SINGLE_QUIZ_COMP,
-  SINGLE_QUIZ_HEIGHT,
-  SINGLE_QUIZ_WIDTH,
-  SingleQuizTimelineSchema,
-  type QuizTimeline,
-  type SingleQuizTimeline
+    defaultDualQuizTimeline,
+    defaultSingleQuizTimeline,
+    DualQuizTimelineSchema,
+    QUIZ_COMP_LANDSCAPE,
+    QUIZ_COMP_PORTRAIT,
+    QUIZ_HEIGHT_LANDSCAPE,
+    QUIZ_HEIGHT_PORTRAIT,
+    QUIZ_WIDTH_LANDSCAPE,
+    QUIZ_WIDTH_PORTRAIT,
+    SINGLE_QUIZ_COMP,
+    SINGLE_QUIZ_HEIGHT,
+    SINGLE_QUIZ_WIDTH,
+    SingleQuizTimelineSchema,
+    type QuizTimeline,
+    type SingleQuizTimeline
 } from "../../types/quiz";
 import {
-  VIDEO_FPS,
-  VIDEO_HEIGHT,
-  VIDEO_WIDTH
+    VIDEO_FPS,
+    VIDEO_HEIGHT,
+    VIDEO_WIDTH
 } from "../../types/shared";
 import { LocalRenderControls } from "../components/LocalRenderControls";
 import { Spacing } from "../components/Spacing";
@@ -89,7 +89,7 @@ const Home: NextPage = () => {
     
     let frame = 0;
     for (let i = 0; i < index; i++) {
-      frame += timeline.slides[i].durationInSeconds * VIDEO_FPS;
+      frame += (timeline.slides[i].durationInSeconds || 10) * VIDEO_FPS;
     }
     playerRef.current.seekTo(frame);
   }, [timeline]);

@@ -40,6 +40,7 @@ export const DualQuizMain: React.FC<z.infer<typeof DualQuizTimelineSchema>> = ({
             backgroundUrl={slide.backgroundUrl}
             backgroundQuery={slide.backgroundQuery}
             durationInSeconds={slide.durationInSeconds}
+            revealTimeSeconds={slide.revealTimeSeconds}
             narrationUrl={slide.narrationUrl}
           />
         );

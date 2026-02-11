@@ -53,6 +53,7 @@ async function renderInBackground(renderId: string, compositionId: string, input
     // Bundle the Remotion project
     const bundleLocation = await bundle({
       entryPoint: path.join(process.cwd(), "src/remotion/index.ts"),
+      publicDir: path.join(process.cwd(), "public"),
       onProgress: (progress) => {
         renderProgress.set(renderId, { 
           progress: 0.05 + progress * 0.15, 
@@ -68,6 +69,7 @@ async function renderInBackground(renderId: string, compositionId: string, input
       serveUrl: bundleLocation,
       id: compositionId,
       inputProps: inputProps as Record<string, unknown>,
+      chromiumOptions: { gl: "angle" },
     });
 
     renderProgress.set(renderId, { progress: 0.25, status: "rendering" });
@@ -79,6 +81,7 @@ async function renderInBackground(renderId: string, compositionId: string, input
       codec: "h264",
       outputLocation: outputPath,
       inputProps: inputProps as Record<string, unknown>,
+      chromiumOptions: { gl: "angle" },
       onProgress: ({ progress }) => {
         renderProgress.set(renderId, {
           progress: 0.25 + progress * 0.75,

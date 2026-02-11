@@ -10,6 +10,7 @@ export const QuizQuestionSchema = z.object({
   backgroundQuery: z.string(),
   backgroundUrl: z.string().optional(),
   durationInSeconds: z.number().default(5),
+  revealTimeSeconds: z.number().optional(),
   narrationUrl: z.string().optional(),
 });
 
@@ -89,6 +90,7 @@ export const SingleQuizQuestionSchema = z.object({
   imageUrl: z.string().optional(),
   backgroundColor: z.string().optional(),
   durationInSeconds: z.number().optional(),
+  revealTimeSeconds: z.number().optional(),
   narrationUrl: z.string().optional(),
 });
 

@@ -7,6 +7,7 @@ import {
   interpolate,
   interpolateColors,
   spring,
+  staticFile,
   useCurrentFrame,
   useVideoConfig
 } from "remotion";
@@ -24,8 +25,9 @@ export interface SingleQuizSlideProps {
   imageUrl?: string;
   backgroundColor?: string;
   durationInSeconds?: number;
-  questionNumber: number; // passed from Main composition
-  quizTitle: string;      // passed from Main composition
+  revealTimeSeconds?: number;
+  questionNumber: number;
+  quizTitle: string;
   narrationUrl?: string;
 }
 
@@ -80,6 +82,7 @@ export const SingleQuizSlide: React.FC<SingleQuizSlideProps> = ({
   imageUrl,
   backgroundColor = "#c2185b",
   durationInSeconds = 10,
+  revealTimeSeconds,
   questionNumber,
   quizTitle,
   narrationUrl,
@@ -87,8 +90,10 @@ export const SingleQuizSlide: React.FC<SingleQuizSlideProps> = ({
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
 
-  // Timing
-  const revealFrame = durationInSeconds * 0.89 * fps; // Answer reveals at 5 seconds
+  // Timing: use exact audio timestamp if available, else fallback to 89%
+  const revealFrame = revealTimeSeconds
+    ? revealTimeSeconds * fps
+    : durationInSeconds * 0.89 * fps;
   const isRevealed = frame >= revealFrame;
 
   // ── Bubbles (seeded for determinism) ──────────────────────────
@@ -420,7 +425,7 @@ export const SingleQuizSlide: React.FC<SingleQuizSlideProps> = ({
           zIndex: 20,
         }}
       />
-      {narrationUrl && <Html5Audio src={narrationUrl} />}
+      {narrationUrl && <Html5Audio src={staticFile(narrationUrl)} />}
     </AbsoluteFill>
   );
 };

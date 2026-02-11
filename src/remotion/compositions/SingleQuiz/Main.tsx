@@ -41,6 +41,7 @@ export const SingleQuizMain: React.FC<z.infer<typeof SingleQuizTimelineSchema>> 
             imageUrl={slide.imageUrl}
             backgroundColor={slide.backgroundColor}
             durationInSeconds={slide.durationInSeconds}
+            revealTimeSeconds={slide.revealTimeSeconds}
             questionNumber={qNum}
             quizTitle={title}
             narrationUrl={slide.narrationUrl}
