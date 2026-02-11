@@ -736,7 +736,7 @@ const Home: NextPage = () => {
               </button>
             </div>
           </div>
-          <div className="overflow-hidden rounded-xl shadow-2xl">
+          <div className="overflow-hidden rounded-xl shadow-2xl bg-black/40 flex justify-center items-center h-[500px] md:h-[532px] w-full border border-white/5">
             <Player
               ref={playerRef}
               component={(
@@ -757,7 +757,8 @@ const Home: NextPage = () => {
                   (orientation === "portrait" ? QUIZ_WIDTH_PORTRAIT : QUIZ_WIDTH_LANDSCAPE))
               }
               style={{ 
-                  width: "100%", 
+                  maxWidth: "100%", 
+                  maxHeight: "100%",
                   aspectRatio: 
                       mode === "education" ? "16/9" :
                       (quizFormat === "single" ? "16/9" :
