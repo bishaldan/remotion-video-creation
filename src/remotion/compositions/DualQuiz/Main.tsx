@@ -3,25 +3,23 @@ import { fade } from "@remotion/transitions/fade";
 import React from "react";
 import { AbsoluteFill } from "remotion";
 import { z } from "zod";
-import {
-    SingleQuizTimelineSchema,
-    VIDEO_FPS,
-} from "../../../types/constants";
-import { IntroSlide } from "../templates/IntroSlide";
-import { OutroSlide } from "../templates/OutroSlide";
-import { SingleQuizSlide } from "../templates/SingleQuizSlide";
+import { QuizTimelineSchema } from "../../../../types/quiz";
+import { VIDEO_FPS } from "../../../../types/shared";
+import { IntroSlide } from "../../templates/IntroSlide";
+import { OutroSlide } from "../../templates/OutroSlide";
+import { DualQuizSlide } from "../../templates/QuizSlide";
+
 
 // Transition duration in frames
 const TRANSITION_DURATION = 15;
 
-export const SingleQuizMain: React.FC<z.infer<typeof SingleQuizTimelineSchema>> = ({
-  title,
+export const DualQuizMain: React.FC<z.infer<typeof QuizTimelineSchema>> = ({
   slides,
 }) => {
-  // Track question number (only count singleQuiz slides)
-  let questionCounter = 0;
+  const renderSlide = (slide: any) => {
+    // Debug logging
+    // console.log("Rendering slide:", slide.type, slide);
 
-  const renderSlide = (slide: any, qNum: number) => {
     switch (slide.type) {
       case "intro":
         return (
@@ -32,18 +30,15 @@ export const SingleQuizMain: React.FC<z.infer<typeof SingleQuizTimelineSchema>> 
             backgroundColor={slide.backgroundColor}
           />
         );
-      case "singleQuiz":
+      case "quiz":
         return (
-          <SingleQuizSlide
+          <DualQuizSlide
             question={slide.question}
-            answer={slide.answer}
             options={slide.options}
-            imageQuery={slide.imageQuery}
-            imageUrl={slide.imageUrl}
-            backgroundColor={slide.backgroundColor}
+            correctIndex={slide.correctIndex}
+            backgroundUrl={slide.backgroundUrl}
+            backgroundQuery={slide.backgroundQuery}
             durationInSeconds={slide.durationInSeconds}
-            questionNumber={qNum}
-            quizTitle={title}
           />
         );
       case "outro":
@@ -57,9 +52,9 @@ export const SingleQuizMain: React.FC<z.infer<typeof SingleQuizTimelineSchema>> 
       default:
         console.warn("Unknown slide type:", slide);
         return (
-          <AbsoluteFill style={{ backgroundColor: "red", justifyContent: "center", alignItems: "center" }}>
-            <h1 style={{ color: "white" }}>Unknown Slide Type: {slide.type}</h1>
-          </AbsoluteFill>
+            <AbsoluteFill style={{backgroundColor: 'red', justifyContent: 'center', alignItems: 'center'}}>
+                <h1 style={{color: 'white'}}>Unknown Slide Type: {slide.type}</h1>
+            </AbsoluteFill>
         );
     }
   };
@@ -68,22 +63,16 @@ export const SingleQuizMain: React.FC<z.infer<typeof SingleQuizTimelineSchema>> 
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
       <TransitionSeries>
         {slides.map((slide, index) => {
-          const durationInSeconds = slide.durationInSeconds || 10;
+          const durationInSeconds = slide.durationInSeconds || 7;
           const durationInFrames = Math.round(durationInSeconds * VIDEO_FPS);
-
-          // Increment question counter for singleQuiz slides
-          if (slide.type === "singleQuiz") {
-            questionCounter++;
-          }
-          const currentQNum = questionCounter;
 
           return (
             <React.Fragment key={index}>
               <TransitionSeries.Sequence durationInFrames={durationInFrames}>
-                {renderSlide(slide, currentQNum)}
+                {renderSlide(slide)}
               </TransitionSeries.Sequence>
-
-              {/* Fade transitions between slides */}
+              
+              {/* Add fade transitions between slides */}
               {index < slides.length - 1 && (
                 <TransitionSeries.Transition
                   presentation={fade()}
@@ -98,15 +87,17 @@ export const SingleQuizMain: React.FC<z.infer<typeof SingleQuizTimelineSchema>> 
   );
 };
 
-export const calculateSingleQuizDuration = (
+export const calculateQuizDuration = (
   slides: any[],
   fps: number = VIDEO_FPS
 ): number => {
   const totalSlideFrames = slides.reduce((total, slide) => {
-    const durationInSeconds = slide.durationInSeconds || 10;
+    const durationInSeconds = slide.durationInSeconds || 7;
     return total + Math.round(durationInSeconds * fps);
   }, 0);
 
+  // Calculate transition frame reductions
+  // In QuizMain, we use simple fade transitions between all slides
   const transitionReduction = (slides.length - 1) * TRANSITION_DURATION;
 
   return Math.max(1, totalSlideFrames - transitionReduction);

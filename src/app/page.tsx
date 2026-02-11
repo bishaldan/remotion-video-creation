@@ -7,37 +7,43 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import {
   defaultEduCompProps,
-  defaultQuizTimeline,
-  defaultSingleQuizTimeline,
   EDU_COMP_NAME,
+  TimelineSchema,
+  type Timeline
+} from "../../types/edu";
+import {
+  defaulDualtQuizTimeline,
+  defaultSingleQuizTimeline,
+  DualQuizTimelineSchema,
   QUIZ_COMP_LANDSCAPE,
   QUIZ_COMP_PORTRAIT,
   QUIZ_HEIGHT_LANDSCAPE,
   QUIZ_HEIGHT_PORTRAIT,
   QUIZ_WIDTH_LANDSCAPE,
   QUIZ_WIDTH_PORTRAIT,
-  QuizTimelineSchema,
   SINGLE_QUIZ_COMP,
   SINGLE_QUIZ_HEIGHT,
   SINGLE_QUIZ_WIDTH,
   SingleQuizTimelineSchema,
-  TimelineSchema,
+  type QuizTimeline,
+  type SingleQuizTimeline
+} from "../../types/quiz";
+import {
   VIDEO_FPS,
   VIDEO_HEIGHT,
-  VIDEO_WIDTH,
-  type QuizTimeline,
-  type SingleQuizTimeline,
-  type Timeline
-} from "../../types/constants";
+  VIDEO_WIDTH
+} from "../../types/shared";
 import { LocalRenderControls } from "../components/LocalRenderControls";
 import { Spacing } from "../components/Spacing";
-import { calculateTimelineDuration, EduMain } from "../remotion/EduComp/Main";
-import { calculateQuizDuration, DualQuizMain } from "../remotion/QuizComp/Main";
-import { calculateSingleQuizDuration, SingleQuizMain } from "../remotion/SingleQuizComp/Main";
+import { calculateQuizDuration, DualQuizMain } from "../remotion/compositions/DualQuiz/Main";
+import { calculateTimelineDuration, EduMain } from "../remotion/compositions/Edu/Main";
+import { calculateSingleQuizDuration, SingleQuizMain } from "../remotion/compositions/SingleQuiz/Main";
 
 const Home: NextPage = () => {
+
+  //Main States
   const [prompt, setPrompt] = useState<string>("");
-  const [mode, setMode] = useState<"normal" | "quiz">("normal");
+  const [mode, setMode] = useState<"education" | "quiz">("education");
   const [quizFormat, setQuizFormat] = useState<"dual" | "single">("dual");
   const [orientation, setOrientation] = useState<"landscape" | "portrait">("landscape");
   // @ts-ignore - Union type handling
@@ -45,14 +51,23 @@ const Home: NextPage = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+
+  //PDF Upload States
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [uploadMode, setUploadMode] = useState<"prompt" | "pdf">("prompt");
+
+  //Editing States
   const [isEditing, setIsEditing] = useState(false);
   const [editPrompt, setEditPrompt] = useState("");
+
+  //Dragging States
   const [isDragging, setIsDragging] = useState(false);
+
+  //Timeline States
   const [isTimelineExpanded, setIsTimelineExpanded] = useState(true);
   const playerRef = useRef<PlayerRef>(null);
 
+  //Gets the total duration of the video in frames
   const durationInFrames = useMemo(() => {
     if (mode === "quiz") {
       if (quizFormat === "single") {
@@ -121,18 +136,21 @@ const Home: NextPage = () => {
     setError(null);
   }, []);
 
+  // File UI HANDLER
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
   }, []);
 
+  //FILE UI HANDLER
   const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
   }, []);
 
+  //FILE UI DROP HANDLER
   const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
@@ -144,7 +162,7 @@ const Home: NextPage = () => {
     }
   }, [handleFileSelect]);
 
-  //API ENDPOINTS
+  //=========API ENDPOINTS=================
   // POST GENERATE
    const handleGenerate = useCallback(async () => {
     // Validate that either PDF or prompt is provided
@@ -270,7 +288,7 @@ const Home: NextPage = () => {
              }
              setTimeline(parsed.data);
           } else {
-             const parsed = QuizTimelineSchema.safeParse(data.timeline);
+             const parsed = DualQuizTimelineSchema.safeParse(data.timeline);
              if (!parsed.success) {
                console.error("Quiz Parse Error:", parsed.error);
                throw new Error("Invalid quiz timeline format received");
@@ -349,7 +367,7 @@ const Home: NextPage = () => {
             }
             setTimeline(parsedSingle.data);
          } else {
-            const parsedQuiz = QuizTimelineSchema.safeParse(data.timeline);
+            const parsedQuiz = DualQuizTimelineSchema.safeParse(data.timeline);
             if (!parsedQuiz.success) {
                throw new Error("Invalid quiz timeline format");
             }
@@ -402,11 +420,11 @@ const Home: NextPage = () => {
             <div className="flex bg-black/20 p-1 rounded-xl">
                 <button
                     onClick={() => {
-                        setMode("normal");
+                        setMode("education");
                         setTimeline(defaultEduCompProps);
                     }}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                        mode === "normal" 
+                        mode === "education" 
                         ? "bg-purple-600 text-white shadow-lg" 
                         : "text-slate-400 hover:text-white"
                     }`}
@@ -416,7 +434,7 @@ const Home: NextPage = () => {
                 <button
                     onClick={() => {
                         setMode("quiz");
-                        setTimeline(defaultQuizTimeline);
+                        setTimeline(defaulDualtQuizTimeline);
                     }}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                         mode === "quiz" 
@@ -435,7 +453,7 @@ const Home: NextPage = () => {
                         <button
                             onClick={() => {
                                 setQuizFormat("dual");
-                                setTimeline(defaultQuizTimeline);
+                                setTimeline(defaulDualtQuizTimeline);
                             }}
                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                                 quizFormat === "dual" 
@@ -722,26 +740,26 @@ const Home: NextPage = () => {
             <Player
               ref={playerRef}
               component={(
-                  mode === "normal" ? EduMain : 
+                  mode === "education" ? EduMain : 
                   (quizFormat === "single" ? SingleQuizMain : DualQuizMain)
               ) as any}
               inputProps={timeline}
               durationInFrames={durationInFrames}
               fps={VIDEO_FPS}
               compositionHeight={
-                  mode === "normal" ? VIDEO_HEIGHT :
+                  mode === "education" ? VIDEO_HEIGHT :
                   (quizFormat === "single" ? SINGLE_QUIZ_HEIGHT :
                   (orientation === "portrait" ? QUIZ_HEIGHT_PORTRAIT : QUIZ_HEIGHT_LANDSCAPE))
               }
               compositionWidth={
-                  mode === "normal" ? VIDEO_WIDTH :
+                  mode === "education" ? VIDEO_WIDTH :
                   (quizFormat === "single" ? SINGLE_QUIZ_WIDTH :
                   (orientation === "portrait" ? QUIZ_WIDTH_PORTRAIT : QUIZ_WIDTH_LANDSCAPE))
               }
               style={{ 
                   width: "100%", 
                   aspectRatio: 
-                      mode === "normal" ? "16/9" :
+                      mode === "education" ? "16/9" :
                       (quizFormat === "single" ? "16/9" :
                       (orientation === "portrait" ? "9/16" : "16/9"))
               }}
@@ -796,6 +814,7 @@ const Home: NextPage = () => {
                       {slide.type === "lottie" && <span className="text-xs font-bold uppercase tracking-wider text-yellow-400 bg-yellow-400/10 px-2 py-0.5 rounded">Lottie</span>}
                       {slide.type === "threeD" && <span className="text-xs font-bold uppercase tracking-wider text-red-400 bg-red-400/10 px-2 py-0.5 rounded">3D</span>}
                       {slide.type === "quiz" && <span className="text-xs font-bold uppercase tracking-wider text-indigo-400 bg-indigo-400/10 px-2 py-0.5 rounded">Quiz</span>}
+                      {slide.type === "singleQuiz" && <span className="text-xs font-bold uppercase tracking-wider text-violet-400 bg-violet-400/10 px-2 py-0.5 rounded">Single Quiz</span>}
                       
                       <span className="text-xs text-slate-500 font-mono">
                         {slide.durationInSeconds}s
@@ -812,6 +831,7 @@ const Home: NextPage = () => {
                       {slide.type === "lottie" && `Animation: ${slide.animationType}`}
                       {slide.type === "threeD" && `3D Model`}
                       {slide.type === "quiz" && (slide.question)}
+                      {slide.type === "singleQuiz" && (slide.answer || slide.question)}
                     </p>
                   </div>
 
@@ -851,7 +871,7 @@ const Home: NextPage = () => {
           </h2>
           <LocalRenderControls
             compositionId={
-                mode === "normal" ? EDU_COMP_NAME :
+                mode === "education" ? EDU_COMP_NAME :
                 (quizFormat === "single" ? SINGLE_QUIZ_COMP :
                 (orientation === "portrait" ? QUIZ_COMP_PORTRAIT : QUIZ_COMP_LANDSCAPE))
             }

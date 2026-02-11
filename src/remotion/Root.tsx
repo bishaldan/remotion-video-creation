@@ -1,9 +1,12 @@
 import { Composition } from "remotion";
 import {
   defaultEduCompProps,
+  EDU_COMP_NAME,
+  TimelineSchema
+} from "../../types/edu";
+import {
   defaultQuizTimeline,
   defaultSingleQuizTimeline,
-  EDU_COMP_NAME,
   QUIZ_COMP_LANDSCAPE,
   QUIZ_COMP_PORTRAIT,
   QUIZ_HEIGHT_LANDSCAPE,
@@ -14,15 +17,16 @@ import {
   SINGLE_QUIZ_COMP,
   SINGLE_QUIZ_HEIGHT,
   SINGLE_QUIZ_WIDTH,
-  SingleQuizTimelineSchema,
-  TimelineSchema,
+  SingleQuizTimelineSchema
+} from "../../types/quiz";
+import {
   VIDEO_FPS,
   VIDEO_HEIGHT,
   VIDEO_WIDTH
-} from "../../types/constants";
-import { calculateTimelineDuration, EduMain } from "./EduComp/Main";
-import { calculateQuizDuration, QuizMain } from "./QuizComp/Main";
-import { calculateSingleQuizDuration, SingleQuizMain } from "./SingleQuizComp/Main";
+} from "../../types/shared";
+import { calculateQuizDuration, DualQuizMain } from "./compositions/DualQuiz/Main";
+import { calculateTimelineDuration, EduMain } from "./compositions/Edu/Main";
+import { calculateSingleQuizDuration, SingleQuizMain } from "./compositions/SingleQuiz/Main";
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -43,7 +47,7 @@ export const RemotionRoot: React.FC = () => {
       />
       <Composition
         id={QUIZ_COMP_LANDSCAPE}
-        component={QuizMain}
+        component={DualQuizMain}
         fps={VIDEO_FPS}
         width={QUIZ_WIDTH_LANDSCAPE}
         height={QUIZ_HEIGHT_LANDSCAPE}
@@ -60,7 +64,7 @@ export const RemotionRoot: React.FC = () => {
       />
       <Composition
         id={QUIZ_COMP_PORTRAIT}
-        component={QuizMain}
+        component={DualQuizMain}
         fps={VIDEO_FPS}
         width={QUIZ_WIDTH_PORTRAIT}
         height={QUIZ_HEIGHT_PORTRAIT}

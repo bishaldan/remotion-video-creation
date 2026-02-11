@@ -4,19 +4,16 @@ import { fade } from "@remotion/transitions/fade";
 import React from "react";
 import { AbsoluteFill } from "remotion";
 import { z } from "zod";
-import {
-  TimelineSchema,
-  VIDEO_FPS,
-  type Slide,
-} from "../../../types/constants";
-import { BulletSlide } from "../templates/BulletSlide";
-import { DiagramSlide } from "../templates/DiagramSlide";
-import { ImageSlide } from "../templates/ImageSlide";
-import { IntroSlide } from "../templates/IntroSlide";
-import { LottieSlide } from "../templates/LottieSlide";
-import { OutroSlide } from "../templates/OutroSlide";
-import { TextSlide } from "../templates/TextSlide";
-import { ThreeDSlide } from "../templates/ThreeDSlide";
+import { TimelineSchema, type Slide } from "../../../../types/edu";
+import { VIDEO_FPS } from "../../../../types/shared";
+import { BulletSlide } from "../../templates/BulletSlide";
+import { DiagramSlide } from "../../templates/DiagramSlide";
+import { ImageSlide } from "../../templates/ImageSlide";
+import { IntroSlide } from "../../templates/IntroSlide";
+import { LottieSlide } from "../../templates/LottieSlide";
+import { OutroSlide } from "../../templates/OutroSlide";
+import { TextSlide } from "../../templates/TextSlide";
+import { ThreeDSlide } from "../../templates/ThreeDSlide";
 
 // Transition duration in frames (0.5 seconds at 30fps = 15 frames)
 const TRANSITION_DURATION = 15;

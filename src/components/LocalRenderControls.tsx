@@ -1,5 +1,6 @@
 import React from "react";
-import type { QuizTimeline, SingleQuizTimeline, Timeline } from "../../types/constants";
+import type { Timeline } from "../../types/edu";
+import type { QuizTimeline, SingleQuizTimeline } from "../../types/quiz";
 import { useLocalRendering } from "../helpers/use-local-rendering";
 import { Button } from "./Button";
 import { InputContainer } from "./Container";
