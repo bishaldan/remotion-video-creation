@@ -1,5 +1,6 @@
 import React from "react";
-import type { Timeline } from "../../types/constants";
+import type { Timeline } from "../../types/edu";
+import type { QuizTimeline, SingleQuizTimeline } from "../../types/quiz";
 import { useLocalRendering } from "../helpers/use-local-rendering";
 import { Button } from "./Button";
 import { InputContainer } from "./Container";
@@ -10,7 +11,7 @@ import { Spacing } from "./Spacing";
 
 export const LocalRenderControls: React.FC<{
   compositionId: string;
-  inputProps: Timeline;
+  inputProps: Timeline | QuizTimeline | SingleQuizTimeline;
 }> = ({ compositionId, inputProps }) => {
   const [saveAs,setSaveAs] = React.useState("")
   const { renderMedia, state, undo } = useLocalRendering(compositionId, inputProps, saveAs);

@@ -7,50 +7,76 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import {
   defaultEduCompProps,
-  defaultQuizTimeline,
   EDU_COMP_NAME,
+  TimelineSchema,
+  type Timeline
+} from "../../types/edu";
+import {
+  defaulDualtQuizTimeline,
+  defaultSingleQuizTimeline,
+  DualQuizTimelineSchema,
   QUIZ_COMP_LANDSCAPE,
   QUIZ_COMP_PORTRAIT,
   QUIZ_HEIGHT_LANDSCAPE,
   QUIZ_HEIGHT_PORTRAIT,
   QUIZ_WIDTH_LANDSCAPE,
   QUIZ_WIDTH_PORTRAIT,
-  QuizTimelineSchema,
-  TimelineSchema,
+  SINGLE_QUIZ_COMP,
+  SINGLE_QUIZ_HEIGHT,
+  SINGLE_QUIZ_WIDTH,
+  SingleQuizTimelineSchema,
+  type QuizTimeline,
+  type SingleQuizTimeline
+} from "../../types/quiz";
+import {
   VIDEO_FPS,
   VIDEO_HEIGHT,
-  VIDEO_WIDTH,
-  type QuizTimeline,
-  type Timeline
-} from "../../types/constants";
+  VIDEO_WIDTH
+} from "../../types/shared";
 import { LocalRenderControls } from "../components/LocalRenderControls";
 import { Spacing } from "../components/Spacing";
-import { calculateTimelineDuration, EduMain } from "../remotion/EduComp/Main";
-import { calculateQuizDuration, QuizMain } from "../remotion/QuizComp/Main";
+import { calculateQuizDuration, DualQuizMain } from "../remotion/compositions/DualQuiz/Main";
+import { calculateTimelineDuration, EduMain } from "../remotion/compositions/Edu/Main";
+import { calculateSingleQuizDuration, SingleQuizMain } from "../remotion/compositions/SingleQuiz/Main";
 
 const Home: NextPage = () => {
+
+  //Main States
   const [prompt, setPrompt] = useState<string>("");
-  const [mode, setMode] = useState<"normal" | "quiz">("normal");
+  const [mode, setMode] = useState<"education" | "quiz">("education");
+  const [quizFormat, setQuizFormat] = useState<"dual" | "single">("dual");
   const [orientation, setOrientation] = useState<"landscape" | "portrait">("landscape");
   // @ts-ignore - Union type handling
-  const [timeline, setTimeline] = useState<Timeline | QuizTimeline>(defaultEduCompProps);
+  const [timeline, setTimeline] = useState<Timeline | QuizTimeline | SingleQuizTimeline>(defaultEduCompProps);
   const [isGenerating, setIsGenerating] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+
+  //PDF Upload States
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [uploadMode, setUploadMode] = useState<"prompt" | "pdf">("prompt");
+
+  //Editing States
   const [isEditing, setIsEditing] = useState(false);
   const [editPrompt, setEditPrompt] = useState("");
+
+  //Dragging States
   const [isDragging, setIsDragging] = useState(false);
+
+  //Timeline States
   const [isTimelineExpanded, setIsTimelineExpanded] = useState(true);
   const playerRef = useRef<PlayerRef>(null);
 
+  //Gets the total duration of the video in frames
   const durationInFrames = useMemo(() => {
     if (mode === "quiz") {
+      if (quizFormat === "single") {
+         return calculateSingleQuizDuration((timeline as SingleQuizTimeline).slides, VIDEO_FPS);
+      }
       return calculateQuizDuration((timeline as QuizTimeline).slides, VIDEO_FPS);
     }
     return calculateTimelineDuration((timeline as Timeline).slides, VIDEO_FPS);
-  }, [timeline, mode]);
+  }, [timeline, mode, quizFormat]);
 
   //Seek to a specific slide
   const seekToSlide = useCallback((index: number) => {
@@ -110,18 +136,21 @@ const Home: NextPage = () => {
     setError(null);
   }, []);
 
+  // File UI HANDLER
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
   }, []);
 
+  //FILE UI HANDLER
   const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
   }, []);
 
+  //FILE UI DROP HANDLER
   const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
@@ -133,77 +162,9 @@ const Home: NextPage = () => {
     }
   }, [handleFileSelect]);
 
-  //API ENDPOINTS
-   const handleEdit = useCallback(async () => {
-    if (!editPrompt.trim()) {
-      setError("Please enter an edit instruction");
-      return;
-    }
-
-    setIsGenerating(true);
-    setLoadingMessage("Editing video timeline...");
-    setError(null);
-
-    try {
-      const formData = new FormData();
-      formData.append("timeline", JSON.stringify(timeline));
-      formData.append("prompt", editPrompt);
-      // Pass current mode/orientation for context if needed, though timeline usually has it
-      formData.append("mode", mode);
-      formData.append("orientation", orientation);
-      
-      if (pdfFile) {
-        formData.append("pdf", pdfFile);
-      }
-
-      const response = await fetch("/api/generate", {
-        method: "PATCH",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        let errorMessage = "Failed to edit timeline";
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorMessage;
-        } catch {
-             // Fallback error
-        }
-        throw new Error(errorMessage);
-      }
-
-      const data = await response.json();
-      if (mode === "quiz") {
-         const parsedQuiz = QuizTimelineSchema.safeParse(data.timeline);
-         if (!parsedQuiz.success) {
-            throw new Error("Invalid quiz timeline format");
-         }
-         setTimeline(parsedQuiz.data);
-      } else {
-         const parsed = TimelineSchema.safeParse(data.timeline);
-         if (!parsed.success) {
-           throw new Error("Invalid timeline format received from server");
-         }
-         setTimeline(parsed.data);
-      }
-      
-      toast.success("Video edited successfully!");
-      setIsEditing(false);
-      setEditPrompt("");
-      canvasConfetti();
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("An unexpected error occurred.");
-      }
-    } finally {
-      setIsGenerating(false);
-      setLoadingMessage("");
-    }
-  }, [timeline, editPrompt]);
-
-  const handleGenerate = useCallback(async () => {
+  //=========API ENDPOINTS=================
+  // POST GENERATE
+   const handleGenerate = useCallback(async () => {
     // Validate that either PDF or prompt is provided
     if (!pdfFile && !prompt.trim()) {
       setError("Please upload a PDF or enter a prompt");
@@ -237,8 +198,10 @@ const Home: NextPage = () => {
             formData.append("prompt", prompt.trim());
           }
           
-          formData.append("mode", mode);
-          if (mode === "quiz") {
+          const effectiveMode = mode === "quiz" && quizFormat === "single" ? "singleQuiz" : mode;
+          formData.append("mode", effectiveMode);
+
+          if (mode === "quiz" && quizFormat === "dual") {
               formData.append("orientation", orientation);
           }
         } catch (fileError) {
@@ -270,6 +233,8 @@ const Home: NextPage = () => {
         // Set loading message for generation
         setLoadingMessage("Generating video timeline...");
         
+        const effectiveMode = mode === "quiz" && quizFormat === "single" ? "singleQuiz" : mode;
+
         // Maintain JSON request for text-only mode (backward compatibility)
         try {
           response = await fetch("/api/generate", {
@@ -277,8 +242,8 @@ const Home: NextPage = () => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
                 prompt,
-                mode,
-                orientation: mode === "quiz" ? orientation : undefined
+                mode: effectiveMode,
+                orientation: (mode === "quiz" && quizFormat === "dual") ? orientation : undefined
             }),
           });
         } catch {
@@ -315,12 +280,21 @@ const Home: NextPage = () => {
       const data = await response.json();
       
       if (mode === "quiz") {
-          const parsed = QuizTimelineSchema.safeParse(data.timeline);
-          if (!parsed.success) {
-            console.error("Quiz Parse Error:", parsed.error);
-            throw new Error("Invalid quiz timeline format received");
+          if (quizFormat === "single") {
+             const parsed = SingleQuizTimelineSchema.safeParse(data.timeline);
+             if (!parsed.success) {
+               console.error("Single Quiz Parse Error:", parsed.error);
+               throw new Error("Invalid single quiz timeline format received");
+             }
+             setTimeline(parsed.data);
+          } else {
+             const parsed = DualQuizTimelineSchema.safeParse(data.timeline);
+             if (!parsed.success) {
+               console.error("Quiz Parse Error:", parsed.error);
+               throw new Error("Invalid quiz timeline format received");
+             }
+             setTimeline(parsed.data);
           }
-          setTimeline(parsed.data);
       } else {
           const parsed = TimelineSchema.safeParse(data.timeline);
           if (!parsed.success) {
@@ -343,6 +317,87 @@ const Home: NextPage = () => {
       setLoadingMessage("");
     }
   }, [prompt, pdfFile]);
+  //PATCH GENERATE
+   const handleEdit = useCallback(async () => {
+    if (!editPrompt.trim()) {
+      setError("Please enter an edit instruction");
+      return;
+    }
+
+    setIsGenerating(true);
+    setLoadingMessage("Editing video timeline...");
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("timeline", JSON.stringify(timeline));
+      formData.append("prompt", editPrompt);
+      // Pass current mode/orientation for context if needed, though timeline usually has it
+      const effectiveMode = mode === "quiz" && quizFormat === "single" ? "singleQuiz" : mode;
+      formData.append("mode", effectiveMode);
+      formData.append("orientation", orientation);
+      
+      if (pdfFile) {
+        formData.append("pdf", pdfFile);
+      }
+
+      const response = await fetch("/api/generate", {
+        method: "PATCH",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        let errorMessage = "Failed to edit timeline";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+             // Fallback error
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      if (mode === "quiz") {
+         if (quizFormat === "single") {
+            const parsedSingle = SingleQuizTimelineSchema.safeParse(data.timeline);
+            if (!parsedSingle.success) {
+               console.error("Single Quiz Parse Error:", parsedSingle.error);
+               throw new Error("Invalid single quiz timeline format");
+            }
+            setTimeline(parsedSingle.data);
+         } else {
+            const parsedQuiz = DualQuizTimelineSchema.safeParse(data.timeline);
+            if (!parsedQuiz.success) {
+               throw new Error("Invalid quiz timeline format");
+            }
+            setTimeline(parsedQuiz.data);
+         }
+      } else {
+         const parsed = TimelineSchema.safeParse(data.timeline);
+         if (!parsed.success) {
+           throw new Error("Invalid timeline format received from server");
+         }
+         setTimeline(parsed.data);
+      }
+      
+      toast.success("Video edited successfully!");
+      setIsEditing(false);
+      setEditPrompt("");
+      canvasConfetti();
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unexpected error occurred.");
+      }
+    } finally {
+      setIsGenerating(false);
+      setLoadingMessage("");
+    }
+  }, [timeline, editPrompt]);
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -365,11 +420,11 @@ const Home: NextPage = () => {
             <div className="flex bg-black/20 p-1 rounded-xl">
                 <button
                     onClick={() => {
-                        setMode("normal");
+                        setMode("education");
                         setTimeline(defaultEduCompProps);
                     }}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                        mode === "normal" 
+                        mode === "education" 
                         ? "bg-purple-600 text-white shadow-lg" 
                         : "text-slate-400 hover:text-white"
                     }`}
@@ -379,7 +434,7 @@ const Home: NextPage = () => {
                 <button
                     onClick={() => {
                         setMode("quiz");
-                        setTimeline(defaultQuizTimeline);
+                        setTimeline(defaulDualtQuizTimeline);
                     }}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                         mode === "quiz" 
@@ -392,27 +447,62 @@ const Home: NextPage = () => {
             </div>
 
             {mode === "quiz" && (
-                <div className="flex bg-black/20 p-1 rounded-xl animate-in fade-in slide-in-from-left-4 duration-300">
-                    <button
-                        onClick={() => setOrientation("landscape")}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                            orientation === "landscape" 
-                            ? "bg-indigo-600 text-white shadow-lg" 
-                            : "text-slate-400 hover:text-white"
-                        }`}
-                    >
-                        Landscape (16:9)
-                    </button>
-                    <button
-                        onClick={() => setOrientation("portrait")}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                            orientation === "portrait" 
-                            ? "bg-indigo-600 text-white shadow-lg" 
-                            : "text-slate-400 hover:text-white"
-                        }`}
-                    >
-                        Portrait (9:16)
-                    </button>
+                <div className="flex flex-col gap-3 w-full sm:w-auto animate-in fade-in slide-in-from-left-4 duration-300">
+                    {/* Format Selection (Dual vs Single) */}
+                    <div className="flex bg-black/20 p-1 rounded-xl w-max">
+                        <button
+                            onClick={() => {
+                                setQuizFormat("dual");
+                                setTimeline(defaulDualtQuizTimeline);
+                            }}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                quizFormat === "dual" 
+                                ? "bg-indigo-600 text-white shadow-lg" 
+                                : "text-slate-400 hover:text-white"
+                            }`}
+                        >
+                            Dual Mode
+                        </button>
+                        <button
+                            onClick={() => {
+                                setQuizFormat("single");
+                                setTimeline(defaultSingleQuizTimeline);
+                            }}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                quizFormat === "single" 
+                                ? "bg-indigo-600 text-white shadow-lg" 
+                                : "text-slate-400 hover:text-white"
+                            }`}
+                        >
+                            Single Mode
+                        </button>
+                    </div>
+
+                    {/* Orientation Selection (Only for Dual Mode) */}
+                    {quizFormat === "dual" && (
+                        <div className="flex bg-black/20 p-1 rounded-xl w-max animate-in fade-in slide-in-from-top-2">
+                            <button
+                                onClick={() => setOrientation("landscape")}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                    orientation === "landscape" 
+                                    ? "bg-blue-600 text-white shadow-lg" 
+                                    : "text-slate-400 hover:text-white"
+                                }`}
+                            >
+                                Landscape (16:9)
+                            </button>
+                            <button
+                                onClick={() => setOrientation("portrait")}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                    orientation === "portrait" 
+                                    ? "bg-blue-600 text-white shadow-lg" 
+                                    : "text-slate-400 hover:text-white"
+                                }`}
+                            >
+                                Portrait (9:16)
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
           </div>
@@ -646,16 +736,34 @@ const Home: NextPage = () => {
               </button>
             </div>
           </div>
-          <div className="overflow-hidden rounded-xl shadow-2xl">
+          <div className="overflow-hidden rounded-xl shadow-2xl bg-black/40 flex justify-center items-center h-[500px] md:h-[532px] w-full border border-white/5">
             <Player
               ref={playerRef}
-              component={(mode === "quiz" ? QuizMain : EduMain) as any}
+              component={(
+                  mode === "education" ? EduMain : 
+                  (quizFormat === "single" ? SingleQuizMain : DualQuizMain)
+              ) as any}
               inputProps={timeline}
               durationInFrames={durationInFrames}
               fps={VIDEO_FPS}
-              compositionHeight={mode === "quiz" && orientation === "portrait" ? QUIZ_HEIGHT_PORTRAIT : (mode === "quiz" ? QUIZ_HEIGHT_LANDSCAPE : VIDEO_HEIGHT)}
-              compositionWidth={mode === "quiz" && orientation === "portrait" ? QUIZ_WIDTH_PORTRAIT : (mode === "quiz" ? QUIZ_WIDTH_LANDSCAPE : VIDEO_WIDTH)}
-              style={{ width: "100%", aspectRatio: mode === "quiz" && orientation === "portrait" ? "9/16" : "16/9" }}
+              compositionHeight={
+                  mode === "education" ? VIDEO_HEIGHT :
+                  (quizFormat === "single" ? SINGLE_QUIZ_HEIGHT :
+                  (orientation === "portrait" ? QUIZ_HEIGHT_PORTRAIT : QUIZ_HEIGHT_LANDSCAPE))
+              }
+              compositionWidth={
+                  mode === "education" ? VIDEO_WIDTH :
+                  (quizFormat === "single" ? SINGLE_QUIZ_WIDTH :
+                  (orientation === "portrait" ? QUIZ_WIDTH_PORTRAIT : QUIZ_WIDTH_LANDSCAPE))
+              }
+              style={{ 
+                  maxWidth: "100%", 
+                  maxHeight: "100%",
+                  aspectRatio: 
+                      mode === "education" ? "16/9" :
+                      (quizFormat === "single" ? "16/9" :
+                      (orientation === "portrait" ? "9/16" : "16/9"))
+              }}
               controls
             />
           </div>
@@ -707,6 +815,7 @@ const Home: NextPage = () => {
                       {slide.type === "lottie" && <span className="text-xs font-bold uppercase tracking-wider text-yellow-400 bg-yellow-400/10 px-2 py-0.5 rounded">Lottie</span>}
                       {slide.type === "threeD" && <span className="text-xs font-bold uppercase tracking-wider text-red-400 bg-red-400/10 px-2 py-0.5 rounded">3D</span>}
                       {slide.type === "quiz" && <span className="text-xs font-bold uppercase tracking-wider text-indigo-400 bg-indigo-400/10 px-2 py-0.5 rounded">Quiz</span>}
+                      {slide.type === "singleQuiz" && <span className="text-xs font-bold uppercase tracking-wider text-violet-400 bg-violet-400/10 px-2 py-0.5 rounded">Single Quiz</span>}
                       
                       <span className="text-xs text-slate-500 font-mono">
                         {slide.durationInSeconds}s
@@ -723,6 +832,7 @@ const Home: NextPage = () => {
                       {slide.type === "lottie" && `Animation: ${slide.animationType}`}
                       {slide.type === "threeD" && `3D Model`}
                       {slide.type === "quiz" && (slide.question)}
+                      {slide.type === "singleQuiz" && (slide.answer || slide.question)}
                     </p>
                   </div>
 
@@ -762,9 +872,9 @@ const Home: NextPage = () => {
           </h2>
           <LocalRenderControls
             compositionId={
-                mode === "quiz" 
-                ? (orientation === "portrait" ? QUIZ_COMP_PORTRAIT : QUIZ_COMP_LANDSCAPE) 
-                : EDU_COMP_NAME
+                mode === "education" ? EDU_COMP_NAME :
+                (quizFormat === "single" ? SINGLE_QUIZ_COMP :
+                (orientation === "portrait" ? QUIZ_COMP_PORTRAIT : QUIZ_COMP_LANDSCAPE))
             }
             inputProps={timeline as any}
           />

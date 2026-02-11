@@ -24,7 +24,7 @@ export interface QuizSlideProps {
   durationInSeconds?: number;
 }
 
-export const QuizSlide: React.FC<QuizSlideProps> = ({
+export const DualQuizSlide: React.FC<QuizSlideProps> = ({
   question,
   options,
   correctIndex,
