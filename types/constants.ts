@@ -324,10 +324,97 @@ export const defaultQuizTimeline: QuizTimeline = {
   ],
 };
 
-// Quiz Composition Constants
+// Quiz Composition Constants (Dual Mode)
 export const QUIZ_COMP_LANDSCAPE = "QuizVideoLandscape";
 export const QUIZ_COMP_PORTRAIT = "QuizVideoPortrait";
 export const QUIZ_WIDTH_LANDSCAPE = 1920;
 export const QUIZ_HEIGHT_LANDSCAPE = 1080;
 export const QUIZ_WIDTH_PORTRAIT = 1080;
 export const QUIZ_HEIGHT_PORTRAIT = 1920;
+
+// ── Single Quiz Mode ──────────────────────────────────────────────
+
+export const SingleQuizQuestionSchema = z.object({
+  type: z.literal("singleQuiz"),
+  question: z.string(),
+  answer: z.string(),                    // Direct answer text (e.g. "Enamel")
+  options: z.array(z.string()).min(2).max(4), // Multiple choice options
+  imageQuery: z.string(),               // 1-3 word Unsplash query for the answer image
+  imageUrl: z.string().optional(),      // Resolved by server
+  backgroundColor: z.string().optional(), // Per-slide background color
+  durationInSeconds: z.number().default(10),
+});
+
+export const SingleQuizTimelineSchema = z.object({
+  title: z.string(),
+  mode: z.literal("singleQuiz"),
+  slides: z.array(z.discriminatedUnion("type", [
+    SingleQuizQuestionSchema,
+    IntroSlideSchema,
+    OutroSlideSchema,
+  ])),
+  defaultSlideDuration: z.number().default(10),
+});
+
+export type SingleQuizQuestion = z.infer<typeof SingleQuizQuestionSchema>;
+export type SingleQuizTimeline = z.infer<typeof SingleQuizTimelineSchema>;
+
+// Vibrant color palette for single quiz backgrounds
+const SINGLE_QUIZ_COLORS = [
+  "#c2185b", // Pink/Magenta (like screenshot)
+  "#7b1fa2", // Purple
+  "#1565c0", // Blue
+  "#00838f", // Teal
+  "#2e7d32", // Green
+  "#e65100", // Orange
+  "#4527a0", // Deep Purple
+  "#00695c", // Dark Teal
+];
+
+export const defaultSingleQuizTimeline: SingleQuizTimeline = {
+  title: "General Knowledge Quiz",
+  mode: "singleQuiz",
+  defaultSlideDuration: 10,
+  slides: [
+    {
+      type: "intro",
+      title: "General Knowledge Quiz",
+      subtitle: "How much do you know?",
+      author: "QuizMaster",
+      backgroundColor: "#1a1a2e",
+      durationInSeconds: 5,
+    },
+    {
+      type: "singleQuiz",
+      question: "What is the outer layer of a tooth called?",
+      answer: "Enamel",
+      options: ["Dentin", "Enamel", "Pulp", "Cementum"],
+      imageQuery: "tooth enamel",
+      imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Blausen_0863_ToothAnatomy_02.png/800px-Blausen_0863_ToothAnatomy_02.png",
+      backgroundColor: SINGLE_QUIZ_COLORS[0],
+      durationInSeconds: 10,
+    },
+    {
+      type: "singleQuiz",
+      question: "Which planet is closest to the Sun?",
+      answer: "Mercury",
+      options: ["Venus", "Mercury", "Mars", "Earth"],
+      imageQuery: "Mercury planet",
+      imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Mercury_in_color_-_Prockter07-edit1.jpg/800px-Mercury_in_color_-_Prockter07-edit1.jpg",
+      backgroundColor: SINGLE_QUIZ_COLORS[1],
+      durationInSeconds: 10,
+    },
+    {
+      type: "outro",
+      title: "Great Job!",
+      callToAction: "How many did you get right? Share your score!",
+      backgroundColor: "#1a1a2e",
+      durationInSeconds: 5,
+    },
+  ],
+};
+
+// Single Quiz Composition Constants (landscape only)
+export const SINGLE_QUIZ_COMP = "SingleQuizVideo";
+export const SINGLE_QUIZ_WIDTH = 1920;
+export const SINGLE_QUIZ_HEIGHT = 1080;

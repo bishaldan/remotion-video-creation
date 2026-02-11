@@ -23,7 +23,7 @@ export interface PromptBuilderInput {
 /**
  * Builds an appropriate prompt for the AI model based on the provided input.
  */
-export function buildPrompt(input: PromptBuilderInput): string {
+export function buildGeneratePrompt(input: PromptBuilderInput): string {
   // PDF-only mode or Combined mode (PDF + supplementary prompt)
   if (input.pdfText) {
     const title = input.pdfMetadata?.title || "Untitled";
@@ -87,7 +87,7 @@ Return the modified JSON object.`;
 
 export interface PromptResult {
   prompt: string;
-  mode: "normal" | "quiz";
+  mode: "normal" | "quiz" | "singleQuiz";
   orientation: "landscape" | "portrait";
 }
 
@@ -100,7 +100,7 @@ export const getPrompt = async (request: NextRequest, isEdit: boolean = false): 
     let pdfMetadata: { title?: string; pageCount: number } | undefined;
     
     // Defaults
-    let mode: "normal" | "quiz" = "normal";
+    let mode: "normal" | "quiz" | "singleQuiz" = "normal";
     let orientation: "landscape" | "portrait" = "landscape";
 
     if(contentType.includes("multipart/form-data")){
@@ -111,6 +111,7 @@ export const getPrompt = async (request: NextRequest, isEdit: boolean = false): 
       const orientationParam = formData.get("orientation") as string | null;
 
       if (modeParam === "quiz") mode = "quiz";
+      if (modeParam === "singleQuiz") mode = "singleQuiz";
       if (orientationParam === "portrait") orientation = "portrait";
       
       // Validate that either PDF or prompt is provided (or just timeline for edit?)
@@ -165,7 +166,7 @@ export const getPrompt = async (request: NextRequest, isEdit: boolean = false): 
       }
       
       // Build prompt using the prompt builder utility
-      prompt = buildPrompt({
+      prompt = buildGeneratePrompt({
         pdfText,
         pdfMetadata,
         userPrompt: userPrompt || undefined,
@@ -181,6 +182,7 @@ export const getPrompt = async (request: NextRequest, isEdit: boolean = false): 
       const body = await request.json();
       
       if (body.mode === "quiz") mode = "quiz";
+      if (body.mode === "singleQuiz") mode = "singleQuiz";
       if (body.orientation === "portrait") orientation = "portrait";
 
       if (isEdit) {
@@ -203,10 +205,13 @@ export const getPrompt = async (request: NextRequest, isEdit: boolean = false): 
       }
       
       // Build prompt for text-only mode
-      prompt = buildPrompt({ userPrompt });
+      prompt = buildGeneratePrompt({ userPrompt });
 
       if (mode === "quiz") {
         prompt = `Create a quiz video about: ${userPrompt}. ${prompt}`;
+      }
+      if (mode === "singleQuiz") {
+        prompt = `Create a general knowledge quiz about: ${userPrompt}. ${prompt}`;
       }
     }
       

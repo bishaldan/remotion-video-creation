@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest, NextResponse } from "next/server";
-import { QuizTimeline, Timeline } from "../../../../types/constants";
+import { QuizTimeline, SingleQuizTimeline, Timeline } from "../../../../types/constants";
 import { getPrompt } from "../../../lib/prompt-builder";
 
 // Simple sanitization to handle potential Markdown code blocks in response
@@ -17,7 +17,7 @@ const cleanJsonResponse = (text: string): string => {
   }
   return cleaned.trim();
 };
-
+//EDUCATION SYSTEM PROMPT
 const NORMAL_SYSTEM_PROMPT = `
 You are an expert educational video content generator. Your goal is to create engaging, accurate, and visually rich educational video timelines.
 
@@ -122,6 +122,7 @@ interface Timeline {
 6.  **Format:** Return ONLY valid JSON.
 `;
 
+//DUAL QUIZ SYSTEM PROMPT
 const QUIZ_SYSTEM_PROMPT = `
 You are an expert viral quiz generator. Your goal is to create engaging, fast-paced quiz videos similar to viral TikTok/Shorts content.
 
@@ -177,6 +178,61 @@ interface QuizTimeline {
 5. **Format:** Return ONLY valid JSON.
 `;
 
+//SINGLE QUIZ SYSTEM PROMPT
+const SINGLE_QUIZ_SYSTEM_PROMPT = `
+You are an expert general knowledge quiz generator. Your goal is to create a sleek, landscape-format quiz video with a "mystery reveal" style.
+
+You will output a JSON object that matches the following TypeScript interface (do not include the interface definition, just the JSON):
+
+\`\`\`typescript
+type Slide =
+  | {
+      type: "intro";
+      title: string;
+      subtitle?: string;
+      author?: string;
+      backgroundColor?: string;
+      durationInSeconds: number;
+    }
+  | {
+      type: "singleQuiz";
+      question: string;
+      answer: string;          // Direct answer text (e.g. "Enamel")
+      options: string[];       // 2-4 options, MUST include the answer
+      imageQuery: string;      // 1-3 KEYWORDS for Unsplash image representing the ANSWER (e.g. "tooth anatomy", "planet mercury")
+      backgroundColor?: string; // Vibrant color for this question's background
+      durationInSeconds: number; // Default 10
+    }
+  | {
+      type: "outro";
+      title?: string;
+      callToAction?: string;
+      backgroundColor?: string;
+      durationInSeconds: number;
+    };
+
+interface SingleQuizTimeline {
+  title: string;
+  mode: "singleQuiz";
+  slides: Slide[];
+  defaultSlideDuration: number;
+}
+\`\`\`
+
+**Instructions:**
+1. **Topic:** Create a general knowledge or specific topic quiz based on value.
+2. **Structure:**
+   - Start with **Intro**.
+   - **5-8 SingleQuiz** slides.
+   - End with **Outro**.
+3. **Quiz Content:**
+   - **answer:** Must be one of the **options**.
+   - **imageQuery:** Describe the ANSWER visually. 1-3 simple words.
+   - **backgroundColor:** Pick a VIBRANT color for each slide (e.g., "#c2185b", "#7b1fa2", "#1565c0", "#00838f"). Vary them!
+   - **durationInSeconds:** Set to 10.
+4. **Format:** Return ONLY valid JSON.
+`;
+
 export async function POST(request: NextRequest) {
   try {
     const { prompt, mode, orientation } = await getPrompt(request);
@@ -193,7 +249,10 @@ export async function POST(request: NextRequest) {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-    const systemPrompt = mode === "quiz" ? QUIZ_SYSTEM_PROMPT : NORMAL_SYSTEM_PROMPT;
+    // Select System Prompt
+    let systemPrompt = NORMAL_SYSTEM_PROMPT;
+    if (mode === "quiz") systemPrompt = QUIZ_SYSTEM_PROMPT;
+    if (mode === "singleQuiz") systemPrompt = SINGLE_QUIZ_SYSTEM_PROMPT;
 
     const result = await model.generateContent([
       systemPrompt,
@@ -204,14 +263,19 @@ export async function POST(request: NextRequest) {
     const text = response.text();
     const cleanedText = cleanJsonResponse(text);
 
-    let timeline: Timeline | QuizTimeline;
+    let timeline: Timeline | QuizTimeline | SingleQuizTimeline;
     try {
       timeline = JSON.parse(cleanedText);
       console.log('POST TIMELINE:', JSON.stringify(timeline, null, 2));
-      // Ensure mode and orientation are set correctly on the timeline object
+      
+      // Ensure mode/orientation on root object
       if (mode === "quiz") {
           (timeline as any).mode = "quiz";
           (timeline as any).orientation = orientation;
+      }
+      if (mode === "singleQuiz") {
+          (timeline as any).mode = "singleQuiz";
+          // Single quiz is always landscape effectively, but we can store it if needed
       }
       
       console.log('Generated Timeline:', JSON.stringify(timeline, null, 2));
@@ -228,35 +292,24 @@ export async function POST(request: NextRequest) {
         } else if (slide.type === "quiz" && slide.backgroundQuery) {
           imageQueries.push(slide.backgroundQuery);
           imageSlides.push(index);
+        } else if (slide.type === "singleQuiz" && slide.imageQuery) {
+          imageQueries.push(slide.imageQuery);
+          imageSlides.push(index);
         }
       });
 
-      // Batch fetch from Unsplash if we have images
+      // Batch fetch from Unsplash
       if (imageQueries.length > 0) {
         console.log("Fetching Unsplash images for:", imageQueries);
-        // Pass orientation to searchUnsplash (batchSearchUnsplash needs update or we map manually)
-        // Since batchSearchUnsplash implementation in unsplash.ts uses searchUnsplash defaults (landscape), 
-        // we should ideally update batchSearchUnsplash to accept orientation or loop here.
-        // Let's loop here for finer control or update unsplash.ts. 
-        // For now, let's just use the batch function but we need to update unsplash.ts to support orientation in batch
-        // OR we just map over them here. 
         
-        // Actually, let's map manually here to support orientation per request
         const imagesMap = new Map();
         await Promise.all(imageQueries.map(async (query, i) => {
-             // Add small delay to avoid rate limiting
              await new Promise(r => setTimeout(r, i * 50));
-             
-             // Use the requested orientation for search
              const searchOrientation = orientation === "portrait" ? "portrait" : "landscape";
-             
-             // We need to import searchUnsplash directly or use the batch one if we update it.
-             // Let's re-import searchUnsplash and use it directly.
              const { searchUnsplash } = require("../../../lib/unsplash");
              const image = await searchUnsplash(query, searchOrientation);
              imagesMap.set(query, image);
         }));
-
 
         // Update slides with resolved URLs
         for (let i = 0; i < imageSlides.length; i++) {
@@ -266,19 +319,14 @@ export async function POST(request: NextRequest) {
           const slide = timeline.slides[slideIndex] as any;
           
           if (image) {
-             if (slide.type === "image") {
-                slide.imageUrl = image.url;
-             } else if (slide.type === "quiz") {
-                slide.backgroundUrl = image.url;
-             }
+             if (slide.type === "image") slide.imageUrl = image.url;
+             else if (slide.type === "quiz") slide.backgroundUrl = image.url;
+             else if (slide.type === "singleQuiz") slide.imageUrl = image.url;
           } else {
-              // Fallback
               const fallbackUrl = `https://source.unsplash.com/${orientation === 'portrait' ? '1080x1920' : '1920x1080'}/?${encodeURIComponent(query)}`;
-              if (slide.type === "image") {
-                  slide.imageUrl = fallbackUrl;
-              } else if (slide.type === "quiz") {
-                  slide.backgroundUrl = fallbackUrl;
-              }
+              if (slide.type === "image") slide.imageUrl = fallbackUrl;
+              else if (slide.type === "quiz") slide.backgroundUrl = fallbackUrl;
+              else if (slide.type === "singleQuiz") slide.imageUrl = fallbackUrl;
           }
         }
       }
@@ -317,7 +365,10 @@ export async function PATCH(request: NextRequest) {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-    const systemPrompt = mode === "quiz" ? QUIZ_SYSTEM_PROMPT : NORMAL_SYSTEM_PROMPT;
+    // Select System Prompt
+    let systemPrompt = NORMAL_SYSTEM_PROMPT;
+    if (mode === "quiz") systemPrompt = QUIZ_SYSTEM_PROMPT;
+    if (mode === "singleQuiz") systemPrompt = SINGLE_QUIZ_SYSTEM_PROMPT;
 
     // Reuse SYSTEM_PROMPT to ensure valid JSON output
     const result = await model.generateContent([
@@ -329,7 +380,7 @@ export async function PATCH(request: NextRequest) {
     const text = response.text();
     const cleanedText = cleanJsonResponse(text);
 
-    let newTimeline: Timeline | QuizTimeline;
+    let newTimeline: Timeline | QuizTimeline | SingleQuizTimeline;
     try {
       newTimeline = JSON.parse(cleanedText);
       
@@ -337,6 +388,9 @@ export async function PATCH(request: NextRequest) {
       if (mode === "quiz") {
          (newTimeline as any).mode = "quiz";
          (newTimeline as any).orientation = orientation;
+      }
+      if (mode === "singleQuiz") {
+         (newTimeline as any).mode = "singleQuiz";
       }
       
       console.log('Edited Timeline:', JSON.stringify(newTimeline, null, 2));
@@ -352,13 +406,15 @@ export async function PATCH(request: NextRequest) {
         } else if (slide.type === "quiz" && slide.backgroundQuery) {
           imageQueries.push(slide.backgroundQuery);
           imageSlides.push(index);
+        } else if (slide.type === "singleQuiz" && slide.imageQuery) {
+          imageQueries.push(slide.imageQuery);
+          imageSlides.push(index);
         }
       });
 
       if (imageQueries.length > 0) {
         console.log("Fetching Unsplash images for edits:", imageQueries);
         
-        // Manual batch fetch (same as POST)
         const imagesMap = new Map();
         await Promise.all(imageQueries.map(async (query, i) => {
              await new Promise(r => setTimeout(r, i * 50));
@@ -375,18 +431,14 @@ export async function PATCH(request: NextRequest) {
           const slide = newTimeline.slides[slideIndex] as any;
           
           if (image) {
-             if (slide.type === "image") {
-                slide.imageUrl = image.url;
-             } else if (slide.type === "quiz") {
-                slide.backgroundUrl = image.url;
-             }
+             if (slide.type === "image") slide.imageUrl = image.url;
+             else if (slide.type === "quiz") slide.backgroundUrl = image.url;
+             else if (slide.type === "singleQuiz") slide.imageUrl = image.url;
           } else {
              const fallbackUrl = `https://source.unsplash.com/${orientation === 'portrait' ? '1080x1920' : '1920x1080'}/?${encodeURIComponent(query)}`;
-              if (slide.type === "image") {
-                  slide.imageUrl = fallbackUrl;
-              } else if (slide.type === "quiz") {
-                  slide.backgroundUrl = fallbackUrl;
-              }
+              if (slide.type === "image") slide.imageUrl = fallbackUrl;
+              else if (slide.type === "quiz") slide.backgroundUrl = fallbackUrl;
+              else if (slide.type === "singleQuiz") slide.imageUrl = fallbackUrl;
           }
         }
       }
@@ -409,3 +461,4 @@ export async function PATCH(request: NextRequest) {
     );
   }
 }
+

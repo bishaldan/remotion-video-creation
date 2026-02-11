@@ -2,6 +2,7 @@ import { Composition } from "remotion";
 import {
   defaultEduCompProps,
   defaultQuizTimeline,
+  defaultSingleQuizTimeline,
   EDU_COMP_NAME,
   QUIZ_COMP_LANDSCAPE,
   QUIZ_COMP_PORTRAIT,
@@ -10,15 +11,18 @@ import {
   QUIZ_WIDTH_LANDSCAPE,
   QUIZ_WIDTH_PORTRAIT,
   QuizTimelineSchema,
+  SINGLE_QUIZ_COMP,
+  SINGLE_QUIZ_HEIGHT,
+  SINGLE_QUIZ_WIDTH,
+  SingleQuizTimelineSchema,
   TimelineSchema,
   VIDEO_FPS,
   VIDEO_HEIGHT,
   VIDEO_WIDTH
 } from "../../types/constants";
 import { calculateTimelineDuration, EduMain } from "./EduComp/Main";
-
-
 import { calculateQuizDuration, QuizMain } from "./QuizComp/Main";
+import { calculateSingleQuizDuration, SingleQuizMain } from "./SingleQuizComp/Main";
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -71,6 +75,21 @@ export const RemotionRoot: React.FC = () => {
           };
         }}
       />
+      <Composition
+        id={SINGLE_QUIZ_COMP}
+        component={SingleQuizMain}
+        fps={VIDEO_FPS}
+        width={SINGLE_QUIZ_WIDTH}
+        height={SINGLE_QUIZ_HEIGHT}
+        schema={SingleQuizTimelineSchema}
+        defaultProps={defaultSingleQuizTimeline}
+        calculateMetadata={({ props }) => {
+          return {
+            durationInFrames: calculateSingleQuizDuration(props.slides, VIDEO_FPS),
+          };
+        }}
+      />
     </>
   );
 };
+
