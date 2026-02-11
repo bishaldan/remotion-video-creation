@@ -32,7 +32,7 @@ import {
 import { LocalRenderControls } from "../components/LocalRenderControls";
 import { Spacing } from "../components/Spacing";
 import { calculateTimelineDuration, EduMain } from "../remotion/EduComp/Main";
-import { calculateQuizDuration, QuizMain } from "../remotion/QuizComp/Main";
+import { calculateQuizDuration, DualQuizMain } from "../remotion/QuizComp/Main";
 import { calculateSingleQuizDuration, SingleQuizMain } from "../remotion/SingleQuizComp/Main";
 
 const Home: NextPage = () => {
@@ -723,7 +723,7 @@ const Home: NextPage = () => {
               ref={playerRef}
               component={(
                   mode === "normal" ? EduMain : 
-                  (quizFormat === "single" ? SingleQuizMain : QuizMain)
+                  (quizFormat === "single" ? SingleQuizMain : DualQuizMain)
               ) as any}
               inputProps={timeline}
               durationInFrames={durationInFrames}

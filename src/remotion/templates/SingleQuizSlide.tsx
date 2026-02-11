@@ -39,7 +39,6 @@ interface BubbleProps {
 
 const Bubble: React.FC<BubbleProps> = ({ x, y, size, speed, delay, opacity }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
 
   // Floating animation using sine wave
   const floatY = Math.sin((frame + delay) * speed * 0.02) * 30;

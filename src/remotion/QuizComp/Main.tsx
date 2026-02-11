@@ -9,12 +9,13 @@ import {
 } from "../../../types/constants";
 import { IntroSlide } from "../templates/IntroSlide";
 import { OutroSlide } from "../templates/OutroSlide";
-import { QuizSlide } from "../templates/QuizSlide";
+import { DualQuizSlide } from "../templates/QuizSlide";
+
 
 // Transition duration in frames
 const TRANSITION_DURATION = 15;
 
-export const QuizMain: React.FC<z.infer<typeof QuizTimelineSchema>> = ({
+export const DualQuizMain: React.FC<z.infer<typeof QuizTimelineSchema>> = ({
   slides,
 }) => {
   const renderSlide = (slide: any) => {
@@ -33,7 +34,7 @@ export const QuizMain: React.FC<z.infer<typeof QuizTimelineSchema>> = ({
         );
       case "quiz":
         return (
-          <QuizSlide
+          <DualQuizSlide
             question={slide.question}
             options={slide.options}
             correctIndex={slide.correctIndex}
