@@ -32,7 +32,7 @@
     ".next/types/**/*.ts",
     "remotion/webpack-override.mjs",
     ".next/dev/types/**/*.ts"
-  ],
+, "src/lib/kokoro-tester.js"  ],
   "exclude": [
     "node_modules",
     "remotion.config.ts"

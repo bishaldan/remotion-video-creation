@@ -18,7 +18,7 @@ loadFont("normal", {
 
 export interface SingleQuizSlideProps {
   question: string;
-  answer: string;
+  correctIndex: number;
   options: string[];
   imageQuery: string;
   imageUrl?: string;
@@ -74,7 +74,7 @@ const seededRandom = (seed: number) => {
 
 export const SingleQuizSlide: React.FC<SingleQuizSlideProps> = ({
   question,
-  answer,
+  correctIndex,
   options,
   imageQuery,
   imageUrl,
@@ -88,7 +88,7 @@ export const SingleQuizSlide: React.FC<SingleQuizSlideProps> = ({
   const { fps, width, height } = useVideoConfig();
 
   // Timing
-  const revealFrame = 5 * fps; // Answer reveals at 5 seconds
+  const revealFrame = durationInSeconds * 0.89 * fps; // Answer reveals at 5 seconds
   const isRevealed = frame >= revealFrame;
 
   // ── Bubbles (seeded for determinism) ──────────────────────────
@@ -124,11 +124,10 @@ export const SingleQuizSlide: React.FC<SingleQuizSlideProps> = ({
   const badgeSpring = spring({ fps, frame: frame - 2, config: { damping: 15, stiffness: 200 } });
   const badgeScale = interpolate(badgeSpring, [0, 1], [0, 1]);
 
-  // Option spacing
+  // Option labels
   const optionLabels = ["A", "B", "C", "D"];
 
-  // Find correct option index
-  const correctIndex = options.findIndex(opt => opt === answer);
+  const answer = options[correctIndex] || "";
 
   return (
     <AbsoluteFill style={{ overflow: "hidden" }}>

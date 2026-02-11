@@ -2,13 +2,13 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest, NextResponse } from "next/server";
 import { Timeline } from "../../../../types/edu";
 import { QuizTimeline, SingleQuizTimeline } from "../../../../types/quiz";
+import { setNarrationUrls } from "../../../lib/kokoro-tts";
 import { getPrompt } from "../../../lib/prompt-builder";
 import {
-  EDUCATION_SYSTEM_PROMPT,
-  QUIZ_SYSTEM_PROMPT,
-  SINGLE_QUIZ_SYSTEM_PROMPT
+    EDUCATION_SYSTEM_PROMPT,
+    QUIZ_SYSTEM_PROMPT,
+    SINGLE_QUIZ_SYSTEM_PROMPT
 } from "../../../lib/prompts";
-import { setNarrationUrls } from "../../../lib/tts";
 import { setImagesUrl } from "../../../lib/unsplash";
 import { cleanJsonResponse } from "../../../lib/utils";
 
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 
       
       await setImagesUrl(timeline, orientation);
-      await setNarrationUrls(timeline);
+      await setNarrationUrls(timeline, prompt, mode || "education");
 
     } catch (parseError) {
       console.error("JSON Parse Error:", parseError, "Text:", text);
@@ -127,7 +127,7 @@ export async function PATCH(request: NextRequest) {
       console.log('Edited Timeline:', JSON.stringify(newTimeline, null, 2));
 
       await setImagesUrl(newTimeline, orientation);
-      await setNarrationUrls(newTimeline);
+      await setNarrationUrls(newTimeline, prompt, mode || "education");
 
       return NextResponse.json({ timeline: newTimeline });
 

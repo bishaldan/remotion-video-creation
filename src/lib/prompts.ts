@@ -100,7 +100,8 @@ interface Timeline {
     *   Space nodes evenly within safe area: x values 250-1650, y values 150-550.
     *   Use descriptive short labels (2-4 words max).
     *   Use colors from the palette: #6366f1, #8b5cf6, #ec4899, #10b981.
-6.  **Format:** Return ONLY valid JSON.
+7.  **durationInSeconds (MANDATORY):** Calculate for each slide using the formula: \`(total_wordcount_on_screen / 2) + 1\`. (e.g., if a slide has 10 words, duration is 6 seconds). Do not use round/ceil/floor.
+8.  **Format:** Return ONLY valid JSON.
 `;
 
 // DUAL QUIZ SYSTEM PROMPT
@@ -153,10 +154,13 @@ interface QuizTimeline {
    - Questions should be interesting and testing knowledge.
    - 4 options per question.
    - **backgroundQuery:** MUST be 1-3 simple words describing the subject (e.g., "Eiffel Tower", "Elephant", "Pizza"). definitive visuals.
-   - **durationInSeconds:** Set to 7 for quiz slides.
-4. **Visuals:**
+  - **durationInSeconds:** (ONLY FOR QUIZ SLIDES) Calculate using the formula: \`((wordcount of question + number of options) / 2) + 7\`. Do not use round/ceil/floor.
+  4. **Visuals:**
    - Quiz slides use fullscreen images. Ensure the backgroundQuery is highly visual.
-5. **Format:** Return ONLY valid JSON.
+   -Intro and Outro backgroundColor: Use dark, modern gradients. **DO NOT** use white (#ffffff) or plain black (#000000).
+      Examples: "linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%)", "linear-gradient(135deg, #2d1b4e 0%, #0f0f1a 100%)".
+  5. **durationInSeconds:** 5 seconds for intro and outro slides.
+  6. **Format:** Return ONLY valid JSON.
 `;
 
 // SINGLE QUIZ SYSTEM PROMPT
@@ -178,9 +182,9 @@ type Slide =
   | {
       type: "singleQuiz";
       question: string;
-      answer: string;          // Direct answer text (e.g. "Enamel")
-      options: string[];       // 2-4 options, MUST include the answer
-      imageQuery: string;      // 1-3 KEYWORDS for Unsplash image representing the ANSWER (e.g. "tooth anatomy", "planet mercury")
+      correctIndex: number;    // 0-based index of the correct option
+      options: string[];       // 2-4 options, MUST include the correct answer
+      imageQuery: string;      // 1-3 KEYWORDS for Unsplash image representing the CORRECT ANSWER (e.g. "tooth anatomy", "planet mercury")
       backgroundColor?: string; // Vibrant color for this question's background
       durationInSeconds: number; // Default 10
     }
@@ -207,11 +211,12 @@ interface SingleQuizTimeline {
    - **5-8 SingleQuiz** slides.
    - End with **Outro**.
 3. **Quiz Content:**
-   - **answer:** Must be one of the **options**.
-   - **imageQuery:** Describe the ANSWER visually. 1-3 simple words.
+   - **correctIndex:** Must be the 0-based index of the correct answer within the **options** array.
+   - **imageQuery:** Describe the CORRECT ANSWER visually. 1-3 simple words.
    - **backgroundColor:** Pick a VIBRANT color for each slide (e.g., "#c2185b", "#7b1fa2", "#1565c0", "#00838f"). Vary them!
    - **Intro and Outro backgroundColor:** Use dark, modern gradients. **DO NOT** use white (#ffffff) or plain black (#000000).
         *Examples: "linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%)", "linear-gradient(135deg, #2d1b4e 0%, #0f0f1a 100%)".
-   - **durationInSeconds:** Set to 10.
-4. **Format:** Return ONLY valid JSON.
+   - **durationInSeconds:** (ONLY FOR QUIZ SLIDES) Calculate using the formula: \`((wordcount of question + number of options) / 2) + 7\`. Do not use round/ceil/floor.
+   - **durationInSeconds:** 5 seconds for intro and outro slides.
+   4. **Format:** Return ONLY valid JSON.
 `;

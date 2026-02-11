@@ -5,6 +5,10 @@ const nextConfig = {
     "@remotion/bundler",
     "@remotion/renderer",
     "esbuild",
+    "kokoro-js",
+    "onnxruntime-node",
+    "phonemizer",
+    "@huggingface/transformers",
   ],
 };
 

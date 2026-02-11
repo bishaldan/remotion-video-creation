@@ -35,7 +35,7 @@ export const SingleQuizMain: React.FC<z.infer<typeof SingleQuizTimelineSchema>> 
         return (
           <SingleQuizSlide
             question={slide.question}
-            answer={slide.answer}
+            correctIndex={slide.correctIndex}
             options={slide.options}
             imageQuery={slide.imageQuery}
             imageUrl={slide.imageUrl}

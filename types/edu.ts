@@ -129,8 +129,8 @@ export const defaultEduCompProps: Timeline = {
       title: "The Wonder of Learning",
       subtitle: "Exploring New Horizons with AI",
       author: "Remotion Series",
-      durationInSeconds: 5,
-      narrationUrl: "/audio/test-education-slide-0.mp3",
+      durationInSeconds: 5.5,
+      narrationUrl: "/audio/official-education-v2_education_2026-02-11/slide-0.wav",
     },
     {
       type: "lottie",
@@ -138,8 +138,8 @@ export const defaultEduCompProps: Timeline = {
       title: "Let's Learn Something New!",
       text: "This video uses AI-generated content with animated characters to make learning fun and engaging.",
       position: "left",
-      durationInSeconds: 5,
-      narrationUrl: "/audio/test-education-slide-1.mp3",
+      durationInSeconds: 11,
+      narrationUrl: "/audio/official-education-v2_education_2026-02-11/slide-1.wav",
     },
     {
       type: "bullets",
@@ -150,8 +150,8 @@ export const defaultEduCompProps: Timeline = {
         "Generate videos from prompts using **AI**",
         "Add images and **Lottie animations**",
       ],
-      durationInSeconds: 4,
-      narrationUrl: "/audio/test-education-slide-2.mp3",
+      durationInSeconds: 13.5,
+      narrationUrl: "/audio/official-education-v2_education_2026-02-11/slide-2.wav",
     },
     {
       type: "image",
@@ -160,14 +160,14 @@ export const defaultEduCompProps: Timeline = {
       kenBurns: "zoomIn",
       creditText: "Unsplash",
       durationInSeconds: 4,
-      narrationUrl: "/audio/test-education-slide-3.mp3",
+      narrationUrl: "/audio/official-education-v2_education_2026-02-11/slide-3.wav",
     },
     {
       type: "outro",
       title: "Thanks for Watching!",
       callToAction: "Created with Remotion SaaS",
-      durationInSeconds: 5,
-      narrationUrl: "/audio/test-education-slide-4.mp3",
+      durationInSeconds: 4.5,
+      narrationUrl: "/audio/official-education-v2_education_2026-02-11/slide-4.wav",
     }
   ],
 };

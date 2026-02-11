@@ -2,14 +2,13 @@ import { fontFamily, loadFont } from "@remotion/google-fonts/Inter";
 import React from "react";
 import {
   AbsoluteFill,
-  Audio,
   Html5Audio,
   Img,
   interpolate,
   interpolateColors,
   spring,
   useCurrentFrame,
-  useVideoConfig,
+  useVideoConfig
 } from "remotion";
 
 loadFont("normal", {
@@ -41,7 +40,7 @@ export const DualQuizSlide: React.FC<QuizSlideProps> = ({
 
   // Answer reveal timing: at 4 seconds (or 80% of duration if user changed default)
   // User asked for 4 seconds specifically.
-  const revealFrame = 5 * fps; 
+  const revealFrame = (durationInSeconds * 0.89) * fps; 
   
   // Background Image with Ken Burns
   const progress = frame / (durationInSeconds * fps);
