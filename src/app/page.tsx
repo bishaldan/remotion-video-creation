@@ -40,6 +40,11 @@ import { calculateTimelineDuration, EduMain } from "../remotion/compositions/Edu
 import { calculateSingleQuizDuration, SingleQuizMain } from "../remotion/compositions/SingleQuiz/Main";
 
 const Home: NextPage = () => {
+  
+  // THESE 3 are of persisting the state of the timeline so that it doesnt reset to default on re-render
+  let [singleQuizTimelineState, setSingleQuizTimelineState] = useState<SingleQuizTimeline>(defaultSingleQuizTimeline);
+  let [dualQuizTimelineState, setDualQuizTimelineState] = useState<QuizTimeline>(defaulDualtQuizTimeline);
+  let [eduTimelineState, setEduTimelineState] = useState<Timeline>(defaultEduCompProps);
 
   //Main States
   const [prompt, setPrompt] = useState<string>("");
@@ -47,7 +52,7 @@ const Home: NextPage = () => {
   const [quizFormat, setQuizFormat] = useState<"dual" | "single">("dual");
   const [orientation, setOrientation] = useState<"landscape" | "portrait">("landscape");
   // @ts-ignore - Union type handling
-  const [timeline, setTimeline] = useState<Timeline | QuizTimeline | SingleQuizTimeline>(defaultEduCompProps);
+  const [timeline, setTimeline] = useState<Timeline | QuizTimeline | SingleQuizTimeline>(eduTimelineState);
   const [isGenerating, setIsGenerating] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
@@ -252,6 +257,7 @@ const Home: NextPage = () => {
             "Network error. Please check your connection and try again."
           );
         }
+
       }
 
       if (!response.ok) {
@@ -287,6 +293,7 @@ const Home: NextPage = () => {
                throw new Error("Invalid single quiz timeline format received");
              }
              setTimeline(parsed.data);
+             setSingleQuizTimelineState(parsed.data);
           } else {
              const parsed = DualQuizTimelineSchema.safeParse(data.timeline);
              if (!parsed.success) {
@@ -294,6 +301,7 @@ const Home: NextPage = () => {
                throw new Error("Invalid quiz timeline format received");
              }
              setTimeline(parsed.data);
+             setDualQuizTimelineState(parsed.data);
           }
       } else {
           const parsed = TimelineSchema.safeParse(data.timeline);
@@ -301,6 +309,7 @@ const Home: NextPage = () => {
             throw new Error("Invalid timeline format received from server");
           }
           setTimeline(parsed.data);
+          setEduTimelineState(parsed.data);
       }
       toast.success("Video generated successfully!");
       canvasConfetti();
@@ -366,12 +375,14 @@ const Home: NextPage = () => {
                throw new Error("Invalid single quiz timeline format");
             }
             setTimeline(parsedSingle.data);
+            setSingleQuizTimelineState(parsedSingle.data);
          } else {
             const parsedQuiz = DualQuizTimelineSchema.safeParse(data.timeline);
             if (!parsedQuiz.success) {
                throw new Error("Invalid quiz timeline format");
             }
             setTimeline(parsedQuiz.data);
+            setDualQuizTimelineState(parsedQuiz.data);
          }
       } else {
          const parsed = TimelineSchema.safeParse(data.timeline);
@@ -379,6 +390,7 @@ const Home: NextPage = () => {
            throw new Error("Invalid timeline format received from server");
          }
          setTimeline(parsed.data);
+         setEduTimelineState(parsed.data);
       }
       
       toast.success("Video edited successfully!");
@@ -421,7 +433,7 @@ const Home: NextPage = () => {
                 <button
                     onClick={() => {
                         setMode("education");
-                        setTimeline(defaultEduCompProps);
+                        setTimeline(eduTimelineState);
                     }}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                         mode === "education" 
@@ -434,7 +446,7 @@ const Home: NextPage = () => {
                 <button
                     onClick={() => {
                         setMode("quiz");
-                        setTimeline(defaulDualtQuizTimeline);
+                        setTimeline(dualQuizTimelineState);
                     }}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                         mode === "quiz" 
@@ -453,7 +465,7 @@ const Home: NextPage = () => {
                         <button
                             onClick={() => {
                                 setQuizFormat("dual");
-                                setTimeline(defaulDualtQuizTimeline);
+                                setTimeline(dualQuizTimelineState);
                             }}
                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                                 quizFormat === "dual" 
@@ -466,7 +478,7 @@ const Home: NextPage = () => {
                         <button
                             onClick={() => {
                                 setQuizFormat("single");
-                                setTimeline(defaultSingleQuizTimeline);
+                                setTimeline(singleQuizTimelineState);
                             }}
                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                                 quizFormat === "single" 
