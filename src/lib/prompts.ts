@@ -210,6 +210,8 @@ interface SingleQuizTimeline {
    - **answer:** Must be one of the **options**.
    - **imageQuery:** Describe the ANSWER visually. 1-3 simple words.
    - **backgroundColor:** Pick a VIBRANT color for each slide (e.g., "#c2185b", "#7b1fa2", "#1565c0", "#00838f"). Vary them!
+   - **Intro and Outro backgroundColor:** Use dark, modern gradients. **DO NOT** use white (#ffffff) or plain black (#000000).
+        *Examples: "linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%)", "linear-gradient(135deg, #2d1b4e 0%, #0f0f1a 100%)".
    - **durationInSeconds:** Set to 10.
 4. **Format:** Return ONLY valid JSON.
 `;
