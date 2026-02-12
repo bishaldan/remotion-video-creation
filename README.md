@@ -59,6 +59,10 @@ GOOGLE_GENERATIVE_AI_API_KEY=your_api_key_here
 ```bash
 npm run dev
 ```
+or 
+``` bash
+docker compose up --build
+```
 Visit `http://localhost:3000` to start creating.
 
 ---
