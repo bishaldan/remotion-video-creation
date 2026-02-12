@@ -69,7 +69,7 @@ async function renderInBackground(renderId: string, compositionId: string, input
       serveUrl: bundleLocation,
       id: compositionId,
       inputProps: inputProps as Record<string, unknown>,
-      chromiumOptions: { gl: "swangle" },  // Change "swangle" to "angle" if not using docker
+      chromiumOptions: { gl: "swangle" },
     });
 
     renderProgress.set(renderId, { progress: 0.25, status: "rendering" });
