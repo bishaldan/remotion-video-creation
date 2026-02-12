@@ -1,14 +1,16 @@
 import { fontFamily, loadFont } from "@remotion/google-fonts/Inter";
 import React, { useMemo } from "react";
 import {
-    AbsoluteFill,
-    Img,
-    interpolate,
-    interpolateColors,
-    spring,
-    useCurrentFrame,
-    useVideoConfig,
+  AbsoluteFill,
+  Html5Audio,
+  Img,
+  interpolate,
+  interpolateColors,
+  spring,
+  useCurrentFrame,
+  useVideoConfig
 } from "remotion";
+import { getAudioSrc } from "../utils/audio-src";
 
 loadFont("normal", {
   subsets: ["latin"],
@@ -17,14 +19,16 @@ loadFont("normal", {
 
 export interface SingleQuizSlideProps {
   question: string;
-  answer: string;
+  correctIndex: number;
   options: string[];
   imageQuery: string;
   imageUrl?: string;
   backgroundColor?: string;
   durationInSeconds?: number;
-  questionNumber: number; // passed from Main composition
-  quizTitle: string;      // passed from Main composition
+  revealTimeSeconds?: number;
+  questionNumber: number;
+  quizTitle: string;
+  narrationUrl?: string;
 }
 
 // ── Bubble Component ─────────────────────────────────────────────
@@ -72,20 +76,24 @@ const seededRandom = (seed: number) => {
 
 export const SingleQuizSlide: React.FC<SingleQuizSlideProps> = ({
   question,
-  answer,
+  correctIndex,
   options,
   imageQuery,
   imageUrl,
   backgroundColor = "#c2185b",
   durationInSeconds = 10,
+  revealTimeSeconds,
   questionNumber,
   quizTitle,
+  narrationUrl,
 }) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
 
-  // Timing
-  const revealFrame = 5 * fps; // Answer reveals at 5 seconds
+  // Timing: use exact audio timestamp if available, else fallback to 89%
+  const revealFrame = revealTimeSeconds
+    ? revealTimeSeconds * fps
+    : durationInSeconds * 0.89 * fps;
   const isRevealed = frame >= revealFrame;
 
   // ── Bubbles (seeded for determinism) ──────────────────────────
@@ -121,11 +129,10 @@ export const SingleQuizSlide: React.FC<SingleQuizSlideProps> = ({
   const badgeSpring = spring({ fps, frame: frame - 2, config: { damping: 15, stiffness: 200 } });
   const badgeScale = interpolate(badgeSpring, [0, 1], [0, 1]);
 
-  // Option spacing
+  // Option labels
   const optionLabels = ["A", "B", "C", "D"];
 
-  // Find correct option index
-  const correctIndex = options.findIndex(opt => opt === answer);
+  const answer = options[correctIndex] || "";
 
   return (
     <AbsoluteFill style={{ overflow: "hidden" }}>
@@ -418,6 +425,7 @@ export const SingleQuizSlide: React.FC<SingleQuizSlideProps> = ({
           zIndex: 20,
         }}
       />
+      {narrationUrl && <Html5Audio src={getAudioSrc(narrationUrl)} />}
     </AbsoluteFill>
   );
 };

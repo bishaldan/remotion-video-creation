@@ -11,6 +11,6 @@ export type { DiagramArrow, DiagramNode, DiagramSlideProps } from "./DiagramSlid
 export { ThreeDSlide } from "./ThreeDSlide";
 export type { ThreeDShape, ThreeDSlideProps } from "./ThreeDSlide";
 
-export { QuizSlide } from "./QuizSlide";
+export { DualQuizSlide } from "./QuizSlide";
 export type { QuizSlideProps } from "./QuizSlide";
 

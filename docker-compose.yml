@@ -1,0 +1,42 @@
+services:
+  # Main Next.js + Remotion app
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local
+    environment:
+      NODE_ENV: production
+      REMOTION_GL: "angle"
+      REMOTION_ENABLE_MULTI_PROCESS_ON_LINUX: "true"
+      REMOTION_DISABLE_WEB_SECURITY: "true"
+    user: "${UID:-1001}:${GID:-1001}"
+    volumes:
+      - ./public:/app/public
+      - ./out:/app/out
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001',r=>process.exit(r.statusCode===200?0:1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+
+  # Reverse proxy (optional) – uncomment profiles to use
+  # nginx:
+  #   image: nginx:alpine
+  #   ports:
+  #     - "80:80"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+  #   depends_on:
+  #     - app
+  #   profiles:
+  #     - proxy

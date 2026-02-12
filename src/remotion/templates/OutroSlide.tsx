@@ -5,11 +5,13 @@ import {
     AbsoluteFill,
     continueRender,
     delayRender,
+    Html5Audio,
     interpolate,
     spring,
     useCurrentFrame,
-    useVideoConfig,
+    useVideoConfig
 } from "remotion";
+import { getAudioSrc } from "../utils/audio-src";
 import { GRADIENT_PRESETS, parseBackground } from "../utils/backgrounds";
 
 loadFont("normal", {
@@ -24,12 +26,14 @@ export interface OutroSlideProps {
   title?: string;
   callToAction?: string;
   backgroundColor?: string;
+  narrationUrl?: string;
 }
 
 export const OutroSlide: React.FC<OutroSlideProps> = ({
   title = "Thanks for Watching!",
   callToAction = "Generated with Remotion",
   backgroundColor = GRADIENT_PRESETS.darkSpace,
+  narrationUrl,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -135,6 +139,7 @@ export const OutroSlide: React.FC<OutroSlideProps> = ({
           {callToAction}
         </div>
       </div>
+      {narrationUrl && <Html5Audio src={getAudioSrc(narrationUrl)} />}
     </AbsoluteFill>
   );
 };

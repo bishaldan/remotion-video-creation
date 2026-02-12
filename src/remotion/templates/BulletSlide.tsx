@@ -1,12 +1,14 @@
 import { fontFamily, loadFont } from "@remotion/google-fonts/Inter";
 import React from "react";
 import {
-  AbsoluteFill,
-  interpolate,
-  useCurrentFrame,
-  useVideoConfig,
+    AbsoluteFill,
+    Html5Audio,
+    interpolate,
+    useCurrentFrame,
+    useVideoConfig,
 } from "remotion";
 import { GRADIENT_PRESETS, parseBackground } from "../utils/backgrounds";
+import { getAudioSrc } from "../utils/audio-src";
 
 loadFont("normal", {
   subsets: ["latin"],
@@ -20,6 +22,7 @@ export interface BulletSlideProps {
   titleColor?: string;
   bulletColor?: string;
   backgroundColor?: string;
+  narrationUrl?: string;
 }
 
 export const BulletSlide: React.FC<BulletSlideProps> = ({
@@ -29,6 +32,7 @@ export const BulletSlide: React.FC<BulletSlideProps> = ({
   titleColor = "#ffffff",
   bulletColor = "#e2e8f0",
   backgroundColor = GRADIENT_PRESETS.purpleBlue,
+  narrationUrl,
 }) => {
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
@@ -62,6 +66,8 @@ export const BulletSlide: React.FC<BulletSlideProps> = ({
   };
 
   const bgStyle = parseBackground(backgroundColor);
+
+  const audioSrc = narrationUrl ? getAudioSrc(narrationUrl) : null;
 
   return (
     <AbsoluteFill
@@ -139,6 +145,31 @@ export const BulletSlide: React.FC<BulletSlideProps> = ({
           );
         })}
       </ul>
+      {audioSrc && (
+        <Html5Audio
+          src={audioSrc}
+          onError={(e) => {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/fc87d80b-32df-4cea-9fe1-142209615e5e', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({
+                id: `log_${Date.now()}_bullet_onError`,
+                location: 'src/remotion/templates/BulletSlide.tsx:Html5Audio',
+                message: 'Html5Audio error',
+                hypothesisId: 'H1',
+                runId: 'docker-audio',
+                timestamp: Date.now(),
+                data: {
+                  src: audioSrc,
+                  errorCode: (e as unknown as { currentTarget: { error: { code: string } } }).currentTarget.error && (e as unknown as { currentTarget: { error: { code: string } } }).currentTarget.error.code || null,
+                },
+              }),
+            }).catch(() => {});
+            // #endregion
+          }}
+        />
+      )}
     </AbsoluteFill>
   );
 };

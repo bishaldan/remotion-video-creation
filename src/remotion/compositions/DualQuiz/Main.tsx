@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { linearTiming, TransitionSeries } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
 import React from "react";
 import { AbsoluteFill } from "remotion";
 import { z } from "zod";
-import { QuizTimelineSchema } from "../../../../types/quiz";
+import { DualQuizTimelineSchema } from "../../../../types/quiz";
 import { VIDEO_FPS } from "../../../../types/shared";
 import { IntroSlide } from "../../templates/IntroSlide";
 import { OutroSlide } from "../../templates/OutroSlide";
@@ -13,12 +14,13 @@ import { DualQuizSlide } from "../../templates/QuizSlide";
 // Transition duration in frames
 const TRANSITION_DURATION = 15;
 
-export const DualQuizMain: React.FC<z.infer<typeof QuizTimelineSchema>> = ({
+export const DualQuizMain: React.FC<z.infer<typeof DualQuizTimelineSchema>> = ({
   slides,
 }) => {
+
   const renderSlide = (slide: any) => {
     // Debug logging
-    // console.log("Rendering slide:", slide.type, slide);
+    console.log(`[DualQuiz] Rendering slide: ${slide.type}`, JSON.stringify(slide, null, 2));
 
     switch (slide.type) {
       case "intro":
@@ -28,6 +30,7 @@ export const DualQuizMain: React.FC<z.infer<typeof QuizTimelineSchema>> = ({
             subtitle={slide.subtitle}
             author={slide.author}
             backgroundColor={slide.backgroundColor}
+            narrationUrl={slide.narrationUrl}
           />
         );
       case "quiz":
@@ -39,6 +42,8 @@ export const DualQuizMain: React.FC<z.infer<typeof QuizTimelineSchema>> = ({
             backgroundUrl={slide.backgroundUrl}
             backgroundQuery={slide.backgroundQuery}
             durationInSeconds={slide.durationInSeconds}
+            revealTimeSeconds={slide.revealTimeSeconds}
+            narrationUrl={slide.narrationUrl}
           />
         );
       case "outro":
@@ -47,6 +52,7 @@ export const DualQuizMain: React.FC<z.infer<typeof QuizTimelineSchema>> = ({
             title={slide.title}
             callToAction={slide.callToAction}
             backgroundColor={slide.backgroundColor}
+            narrationUrl={slide.narrationUrl}
           />
         );
       default:
@@ -63,6 +69,7 @@ export const DualQuizMain: React.FC<z.infer<typeof QuizTimelineSchema>> = ({
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
       <TransitionSeries>
         {slides.map((slide, index) => {
+          console.log(`[DualQuiz] Rendering slide ${index}:`, JSON.stringify(slide, null, 2));
           const durationInSeconds = slide.durationInSeconds || 7;
           const durationInFrames = Math.round(durationInSeconds * VIDEO_FPS);
 

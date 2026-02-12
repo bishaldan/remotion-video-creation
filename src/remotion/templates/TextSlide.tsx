@@ -2,11 +2,13 @@ import { fontFamily, loadFont } from "@remotion/google-fonts/Inter";
 import React from "react";
 import {
     AbsoluteFill,
+    Html5Audio,
     interpolate,
     useCurrentFrame,
-    useVideoConfig,
+    useVideoConfig
 } from "remotion";
 import { GRADIENT_PRESETS, parseBackground } from "../utils/backgrounds";
+import { getAudioSrc } from "../utils/audio-src";
 
 loadFont("normal", {
   subsets: ["latin"],
@@ -21,6 +23,7 @@ export interface TextSlideProps {
   fontSize?: number;
   color?: string;
   backgroundColor?: string;
+  narrationUrl?: string;
 }
 
 export const TextSlide: React.FC<TextSlideProps> = ({
@@ -29,6 +32,7 @@ export const TextSlide: React.FC<TextSlideProps> = ({
   fontSize = 64,
   color = "#ffffff",
   backgroundColor = GRADIENT_PRESETS.darkSpace,
+  narrationUrl,
 }) => {
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
@@ -134,6 +138,7 @@ export const TextSlide: React.FC<TextSlideProps> = ({
         {animation === "fadeIn" && renderFadeIn()}
         {animation === "wordByWord" && renderWordByWord()}
       </div>
+      {narrationUrl && <Html5Audio src={getAudioSrc(narrationUrl)} />}
     </AbsoluteFill>
   );
 };

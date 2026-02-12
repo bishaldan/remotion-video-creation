@@ -10,6 +10,8 @@ export const QuizQuestionSchema = z.object({
   backgroundQuery: z.string(),
   backgroundUrl: z.string().optional(),
   durationInSeconds: z.number().default(5),
+  revealTimeSeconds: z.number().optional(),
+  narrationUrl: z.string().optional(),
 });
 
 export const DualQuizTimelineSchema = z.object({
@@ -27,7 +29,7 @@ export const DualQuizTimelineSchema = z.object({
 export type QuizQuestion = z.infer<typeof QuizQuestionSchema>;
 export type QuizTimeline = z.infer<typeof DualQuizTimelineSchema>;
 
-export const defaulDualtQuizTimeline: QuizTimeline = {
+export const defaultDualQuizTimeline: QuizTimeline = {
   title: "Solar System Quiz",
   mode: "quiz",
   orientation: "landscape",
@@ -39,6 +41,7 @@ export const defaulDualtQuizTimeline: QuizTimeline = {
       subtitle: "Test your knowledge!",
       author: "Remotion Quiz",
       durationInSeconds: 5,
+      narrationUrl: "/audio/solar-system-quiz-enhanced-v4_quiz_2026-02-11/slide-0.wav",
     },
     {
       type: "quiz",
@@ -47,7 +50,8 @@ export const defaulDualtQuizTimeline: QuizTimeline = {
       correctIndex: 1,
       backgroundQuery: "Mars planet space",
       backgroundUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/OSIRIS_Mars_true_color.jpg/1920px-OSIRIS_Mars_true_color.jpg",
-      durationInSeconds: 7,
+      durationInSeconds: 13.5,
+      narrationUrl: "/audio/solar-system-quiz-enhanced-v4_quiz_2026-02-11/slide-1.wav",
     },
     {
       type: "quiz",
@@ -56,13 +60,15 @@ export const defaulDualtQuizTimeline: QuizTimeline = {
       correctIndex: 1,
       backgroundQuery: "Jupiter planet space",
       backgroundUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Jupiter.jpg/1920px-Jupiter.jpg",
-      durationInSeconds: 7,
+      durationInSeconds: 13.5,
+      narrationUrl: "/audio/solar-system-quiz-enhanced-v4_quiz_2026-02-11/slide-2.wav",
     },
     {
       type: "outro",
       title: "Great Job!",
       callToAction: "Follow for more quizzes",
-      durationInSeconds: 5,
+      durationInSeconds: 7,
+      narrationUrl: "/audio/solar-system-quiz-enhanced-v4_quiz_2026-02-11/slide-3.wav",
     }
   ],
 };
@@ -78,12 +84,14 @@ export const QUIZ_HEIGHT_PORTRAIT = 1920;
 export const SingleQuizQuestionSchema = z.object({
   type: z.literal("singleQuiz"),
   question: z.string(),
-  answer: z.string(),
-  options: z.array(z.string()).min(2).max(4),
+  correctIndex: z.number(),
+  options: z.array(z.string()),
   imageQuery: z.string(),
   imageUrl: z.string().optional(),
   backgroundColor: z.string().optional(),
-  durationInSeconds: z.number().default(10),
+  durationInSeconds: z.number().optional(),
+  revealTimeSeconds: z.number().optional(),
+  narrationUrl: z.string().optional(),
 });
 
 export const SingleQuizTimelineSchema = z.object({
@@ -116,26 +124,29 @@ export const defaultSingleQuizTimeline: SingleQuizTimeline = {
       author: "QuizMaster",
       backgroundColor: "#1a1a2e",
       durationInSeconds: 5,
+      narrationUrl: "/audio/official-single-quiz-v5_singleQuiz_2026-02-11/slide-0.wav",
     },
     {
       type: "singleQuiz",
-      question: "What is the outer layer of a tooth called?",
-      answer: "Enamel",
-      options: ["Dentin", "Enamel", "Pulp", "Cementum"],
+      question: "Which part of the tooth is the hardest substance in the human body?",
+      correctIndex: 0,
+      options: ["Enamel", "Dentin", "Pulp", "Cementum"],
       imageQuery: "tooth enamel",
       imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Blausen_0863_ToothAnatomy_02.png/800px-Blausen_0863_ToothAnatomy_02.png",
       backgroundColor: SINGLE_QUIZ_COLORS[0],
-      durationInSeconds: 10,
+      durationInSeconds: 15.5,
+      narrationUrl: "/audio/official-single-quiz-v5_singleQuiz_2026-02-11/slide-1.wav",
     },
     {
       type: "singleQuiz",
-      question: "Which planet is closest to the Sun?",
-      answer: "Mercury",
-      options: ["Venus", "Mercury", "Mars", "Earth"],
+      question: "Which planet is the smallest in our solar system?",
+      correctIndex: 1,
+      options: ["Mars", "Mercury", "Venus", "Earth"],
       imageQuery: "Mercury planet",
       imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Mercury_in_color_-_Prockter07-edit1.jpg/800px-Mercury_in_color_-_Prockter07-edit1.jpg",
       backgroundColor: SINGLE_QUIZ_COLORS[1],
-      durationInSeconds: 10,
+      durationInSeconds: 14.5,
+      narrationUrl: "/audio/official-single-quiz-v5_singleQuiz_2026-02-11/slide-2.wav",
     },
     {
       type: "outro",
@@ -143,6 +154,7 @@ export const defaultSingleQuizTimeline: SingleQuizTimeline = {
       callToAction: "How many did you get right? Share your score!",
       backgroundColor: "#1a1a2e",
       durationInSeconds: 5,
+      narrationUrl: "/audio/official-single-quiz-v5_singleQuiz_2026-02-11/slide-3.wav",
     },
   ],
 };

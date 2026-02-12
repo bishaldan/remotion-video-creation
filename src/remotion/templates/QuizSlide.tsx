@@ -1,14 +1,16 @@
 import { fontFamily, loadFont } from "@remotion/google-fonts/Inter";
 import React from "react";
 import {
-    AbsoluteFill,
-    Img,
-    interpolate,
-    interpolateColors,
-    spring,
-    useCurrentFrame,
-    useVideoConfig,
+  AbsoluteFill,
+  Html5Audio,
+  Img,
+  interpolate,
+  interpolateColors,
+  spring,
+  useCurrentFrame,
+  useVideoConfig
 } from "remotion";
+import { getAudioSrc } from "../utils/audio-src";
 
 loadFont("normal", {
   subsets: ["latin"],
@@ -19,9 +21,11 @@ export interface QuizSlideProps {
   question: string;
   options: string[];
   correctIndex: number;
-  backgroundUrl?: string; // Resolved URL
-  backgroundQuery?: string; // Fallback
+  backgroundUrl?: string;
+  backgroundQuery?: string;
   durationInSeconds?: number;
+  revealTimeSeconds?: number;
+  narrationUrl?: string;
 }
 
 export const DualQuizSlide: React.FC<QuizSlideProps> = ({
@@ -31,13 +35,16 @@ export const DualQuizSlide: React.FC<QuizSlideProps> = ({
   backgroundUrl,
   backgroundQuery,
   durationInSeconds = 7,
+  revealTimeSeconds,
+  narrationUrl,
 }) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
 
-  // Answer reveal timing: at 4 seconds (or 80% of duration if user changed default)
-  // User asked for 4 seconds specifically.
-  const revealFrame = 5 * fps; 
+  // Answer reveal: use exact audio timestamp if available, else fallback to 89%
+  const revealFrame = revealTimeSeconds 
+    ? revealTimeSeconds * fps 
+    : (durationInSeconds * 0.89) * fps;
   
   // Background Image with Ken Burns
   const progress = frame / (durationInSeconds * fps);
@@ -218,6 +225,7 @@ export const DualQuizSlide: React.FC<QuizSlideProps> = ({
             width: `${(frame / (durationInSeconds * fps)) * 100}%`
         }} />
 
+        {narrationUrl && <Html5Audio src={getAudioSrc(narrationUrl)} />}
       </AbsoluteFill>
     </AbsoluteFill>
   );

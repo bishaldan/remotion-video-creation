@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { linearTiming, TransitionSeries } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
 import React from "react";
@@ -28,20 +29,23 @@ export const SingleQuizMain: React.FC<z.infer<typeof SingleQuizTimelineSchema>> 
             subtitle={slide.subtitle}
             author={slide.author}
             backgroundColor={slide.backgroundColor}
+            narrationUrl={slide.narrationUrl}
           />
         );
       case "singleQuiz":
         return (
           <SingleQuizSlide
             question={slide.question}
-            answer={slide.answer}
+            correctIndex={slide.correctIndex}
             options={slide.options}
             imageQuery={slide.imageQuery}
             imageUrl={slide.imageUrl}
             backgroundColor={slide.backgroundColor}
             durationInSeconds={slide.durationInSeconds}
+            revealTimeSeconds={slide.revealTimeSeconds}
             questionNumber={qNum}
             quizTitle={title}
+            narrationUrl={slide.narrationUrl}
           />
         );
       case "outro":
@@ -50,6 +54,7 @@ export const SingleQuizMain: React.FC<z.infer<typeof SingleQuizTimelineSchema>> 
             title={slide.title}
             callToAction={slide.callToAction}
             backgroundColor={slide.backgroundColor}
+            narrationUrl={slide.narrationUrl}
           />
         );
       default:
@@ -66,6 +71,7 @@ export const SingleQuizMain: React.FC<z.infer<typeof SingleQuizTimelineSchema>> 
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
       <TransitionSeries>
         {slides.map((slide, index) => {
+          console.log(`[SingleQuiz] Rendering slide ${index}:`, JSON.stringify(slide, null, 2));
           const durationInSeconds = slide.durationInSeconds || 10;
           const durationInFrames = Math.round(durationInSeconds * VIDEO_FPS);
 

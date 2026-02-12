@@ -17,6 +17,7 @@ export const IntroSlideSchema = z.object({
   author: z.string().optional(),
   backgroundColor: z.string().optional(),
   durationInSeconds: z.number().default(6),
+  narrationUrl: z.string().optional(),
 });
 
 export const OutroSlideSchema = z.object({
@@ -25,6 +26,7 @@ export const OutroSlideSchema = z.object({
   callToAction: z.string().optional(),
   backgroundColor: z.string().optional(),
   durationInSeconds: z.number().default(6),
+  narrationUrl: z.string().optional(),
 });
 
 export type IntroSlide = z.infer<typeof IntroSlideSchema>;

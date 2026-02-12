@@ -5,15 +5,15 @@ import {
   TimelineSchema
 } from "../../types/edu";
 import {
-  defaultQuizTimeline,
+  defaultDualQuizTimeline,
   defaultSingleQuizTimeline,
+  DualQuizTimelineSchema,
   QUIZ_COMP_LANDSCAPE,
   QUIZ_COMP_PORTRAIT,
   QUIZ_HEIGHT_LANDSCAPE,
   QUIZ_HEIGHT_PORTRAIT,
   QUIZ_WIDTH_LANDSCAPE,
   QUIZ_WIDTH_PORTRAIT,
-  QuizTimelineSchema,
   SINGLE_QUIZ_COMP,
   SINGLE_QUIZ_HEIGHT,
   SINGLE_QUIZ_WIDTH,
@@ -51,9 +51,9 @@ export const RemotionRoot: React.FC = () => {
         fps={VIDEO_FPS}
         width={QUIZ_WIDTH_LANDSCAPE}
         height={QUIZ_HEIGHT_LANDSCAPE}
-        schema={QuizTimelineSchema}
+        schema={DualQuizTimelineSchema}
         defaultProps={{
-          ...defaultQuizTimeline,
+          ...defaultDualQuizTimeline,
           orientation: "landscape",
         }}
         calculateMetadata={({ props }) => {
@@ -68,9 +68,9 @@ export const RemotionRoot: React.FC = () => {
         fps={VIDEO_FPS}
         width={QUIZ_WIDTH_PORTRAIT}
         height={QUIZ_HEIGHT_PORTRAIT}
-        schema={QuizTimelineSchema}
+        schema={DualQuizTimelineSchema}
         defaultProps={{
-          ...defaultQuizTimeline,
+          ...defaultDualQuizTimeline,
           orientation: "portrait",
         }}
         calculateMetadata={({ props }) => {

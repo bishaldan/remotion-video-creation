@@ -2,7 +2,8 @@ import { Environment, Html, OrbitControls } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { ThreeCanvas } from "@remotion/three";
 import React, { useMemo, useRef } from "react";
-import { interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+import { Html5Audio, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+import { getAudioSrc } from "../utils/audio-src";
 import * as THREE from "three";
 
 export type ThreeDShape = "cube" | "sphere" | "pyramid" | "torus" | "cylinder";
@@ -26,6 +27,7 @@ export interface ThreeDSlideProps {
   shape?: ThreeDShape;
   color?: string;
   backgroundColor?: string;
+  narrationUrl?: string;
 }
 
 interface ShapeProps {
@@ -131,6 +133,7 @@ export const ThreeDSlide: React.FC<ThreeDSlideProps> = ({
   shape = "cube",
   color = "#6366f1",
   backgroundColor = "#0f0f1a",
+  narrationUrl,
 }) => {
   const frame = useCurrentFrame();
   const { durationInFrames, width, height } = useVideoConfig();
@@ -243,6 +246,7 @@ export const ThreeDSlide: React.FC<ThreeDSlideProps> = ({
           {title}
         </div>
       )}
+      {narrationUrl && <Html5Audio src={getAudioSrc(narrationUrl)} />}
     </div>
   );
 };
