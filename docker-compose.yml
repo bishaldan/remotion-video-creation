@@ -10,7 +10,7 @@ services:
       - .env.local
     environment:
       NODE_ENV: production
-      REMOTION_GL: "angle"
+      REMOTION_GL: "swangle"
       REMOTION_ENABLE_MULTI_PROCESS_ON_LINUX: "true"
       REMOTION_DISABLE_WEB_SECURITY: "true"
     user: "${UID:-1001}:${GID:-1001}"

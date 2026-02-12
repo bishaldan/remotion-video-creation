@@ -20,24 +20,8 @@ export function getAudioSrc(narrationUrl: string): string {
 
   const src = staticFile(narrationUrl);
 
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/fc87d80b-32df-4cea-9fe1-142209615e5e', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({
-      id: `log_${Date.now()}`,
-      location: 'src/remotion/utils/audio-src.ts:getAudioSrc',
-      message: 'Resolved audio src',
-      hypothesisId: 'H4',
-      runId: 'docker-audio',
-      timestamp: Date.now(),
-      data: {
-        narrationUrl,
-        src,
-      },
-    }),
-  }).catch(() => {});
-  // #endregion
+  console.log(`[AudioSrc] Resolved: ${narrationUrl} -> ${src}`);
+
 
   return src;
 }

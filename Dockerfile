@@ -61,6 +61,9 @@
         libpango-1.0-0 \
         libcairo2 \
         libcups2 \
+        libgl1 \
+        libegl1 \
+        libgl1-mesa-dri \
         && rm -rf /var/lib/apt/lists/*
     
     ENV NODE_ENV=production \
@@ -77,10 +80,12 @@
     COPY --from=builder --chown=nextjs:nodejs /app/.next               ./.next
     COPY --from=builder --chown=nextjs:nodejs /app/public              ./public
     COPY --from=builder --chown=nextjs:nodejs /app/package.json        ./package.json
+    COPY --from=builder --chown=nextjs:nodejs /app/postcss.config.mjs  ./postcss.config.mjs
     COPY --from=builder --chown=nextjs:nodejs /app/next.config.js      ./next.config.js
     COPY --from=builder --chown=nextjs:nodejs /app/src                 ./src
     COPY --from=builder --chown=nextjs:nodejs /app/types               ./types
     COPY --from=builder --chown=nextjs:nodejs /app/remotion.config.ts  ./remotion.config.ts
+    COPY --from=builder --chown=nextjs:nodejs /app/styles              ./styles
     COPY --from=builder --chown=nextjs:nodejs /app/scripts             ./scripts
     COPY --from=builder --chown=nextjs:nodejs /app/.agents             ./.agents
     

@@ -64,7 +64,12 @@ or
 docker compose up --build
 ```
 Visit `http://localhost:3000` to start creating.
-
+### <p style={{color:'red'}}>IMPORTANT Docker Related Issues: </p>
+After generating video, If you experience no audio playback, you might need to restart the docker container with:
+```bash
+docker restart <container_name>
+```
+This is due to volume sync delay or caching within the container.
 ---
 
 ## 🍱 Project Architecture
