@@ -7,10 +7,10 @@ import {
   interpolate,
   interpolateColors,
   spring,
-  staticFile,
   useCurrentFrame,
   useVideoConfig
 } from "remotion";
+import { getAudioSrc } from "../utils/audio-src";
 
 loadFont("normal", {
   subsets: ["latin"],
@@ -425,7 +425,7 @@ export const SingleQuizSlide: React.FC<SingleQuizSlideProps> = ({
           zIndex: 20,
         }}
       />
-      {narrationUrl && <Html5Audio src={staticFile(narrationUrl)} />}
+      {narrationUrl && <Html5Audio src={getAudioSrc(narrationUrl)} />}
     </AbsoluteFill>
   );
 };

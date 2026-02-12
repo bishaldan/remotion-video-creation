@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { linearTiming, TransitionSeries } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
 import React from "react";
@@ -16,9 +17,10 @@ const TRANSITION_DURATION = 15;
 export const DualQuizMain: React.FC<z.infer<typeof DualQuizTimelineSchema>> = ({
   slides,
 }) => {
+
   const renderSlide = (slide: any) => {
     // Debug logging
-    // console.log("Rendering slide:", slide.type, slide);
+    console.log(`[DualQuiz] Rendering slide: ${slide.type}`, JSON.stringify(slide, null, 2));
 
     switch (slide.type) {
       case "intro":
@@ -67,6 +69,7 @@ export const DualQuizMain: React.FC<z.infer<typeof DualQuizTimelineSchema>> = ({
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
       <TransitionSeries>
         {slides.map((slide, index) => {
+          console.log(`[DualQuiz] Rendering slide ${index}:`, JSON.stringify(slide, null, 2));
           const durationInSeconds = slide.durationInSeconds || 7;
           const durationInFrames = Math.round(durationInSeconds * VIDEO_FPS);
 

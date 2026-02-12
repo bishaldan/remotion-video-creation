@@ -7,10 +7,10 @@ import {
   interpolate,
   interpolateColors,
   spring,
-  staticFile,
   useCurrentFrame,
   useVideoConfig
 } from "remotion";
+import { getAudioSrc } from "../utils/audio-src";
 
 loadFont("normal", {
   subsets: ["latin"],
@@ -225,7 +225,7 @@ export const DualQuizSlide: React.FC<QuizSlideProps> = ({
             width: `${(frame / (durationInSeconds * fps)) * 100}%`
         }} />
 
-        {narrationUrl && <Html5Audio src={staticFile(narrationUrl)} />}
+        {narrationUrl && <Html5Audio src={getAudioSrc(narrationUrl)} />}
       </AbsoluteFill>
     </AbsoluteFill>
   );

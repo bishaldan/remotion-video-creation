@@ -3,7 +3,7 @@
 import { Player, PlayerRef } from "@remotion/player";
 import canvasConfetti from "canvas-confetti";
 import type { NextPage } from "next";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import {
     defaultEduCompProps,
@@ -42,16 +42,16 @@ import { calculateSingleQuizDuration, SingleQuizMain } from "../remotion/composi
 const Home: NextPage = () => {
   
   // THESE 3 are of persisting the state of the timeline so that it doesnt reset to default on re-render
-  let [singleQuizTimelineState, setSingleQuizTimelineState] = useState<SingleQuizTimeline>(defaultSingleQuizTimeline);
-  let [dualQuizTimelineState, setDualQuizTimelineState] = useState<QuizTimeline>(defaultDualQuizTimeline);
-  let [eduTimelineState, setEduTimelineState] = useState<Timeline>(defaultEduCompProps);
+  const [singleQuizTimelineState, setSingleQuizTimelineState] = useState<SingleQuizTimeline>(defaultSingleQuizTimeline);
+  const [dualQuizTimelineState, setDualQuizTimelineState] = useState<QuizTimeline>(defaultDualQuizTimeline);
+  const [eduTimelineState, setEduTimelineState] = useState<Timeline>(defaultEduCompProps);
 
   //Main States
   const [prompt, setPrompt] = useState<string>("");
   const [mode, setMode] = useState<"education" | "quiz">("education");
   const [quizFormat, setQuizFormat] = useState<"dual" | "single">("dual");
   const [orientation, setOrientation] = useState<"landscape" | "portrait">("landscape");
-  // @ts-ignore - Union type handling
+
   const [timeline, setTimeline] = useState<Timeline | QuizTimeline | SingleQuizTimeline>(eduTimelineState);
   const [isGenerating, setIsGenerating] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState<string>("");
@@ -70,7 +70,12 @@ const Home: NextPage = () => {
 
   //Timeline States
   const [isTimelineExpanded, setIsTimelineExpanded] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const playerRef = useRef<PlayerRef>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   //Gets the total duration of the video in frames
   const durationInFrames = useMemo(() => {
@@ -96,16 +101,16 @@ const Home: NextPage = () => {
 
   //TIMELINE SLIDE ORDER HANDLER
   const moveSlide = useCallback((index: number, direction: "up" | "down") => {
-    setTimeline(((prev: any) => {
-      const newSlides = [...prev.slides];
+    setTimeline(((prev: unknown) => {
+      const newSlides = [...(prev as unknown as Timeline | QuizTimeline | SingleQuizTimeline).slides];
       if (direction === "up" && index > 0) {
         [newSlides[index], newSlides[index - 1]] = [newSlides[index - 1], newSlides[index]];
       } else if (direction === "down" && index < newSlides.length - 1) {
-        [newSlides[index], newSlides[index + 1]] = [newSlides[index + 1], newSlides[index]];
+        [newSlides[index], newSlides[index + 1]] = [newSlides[index + 1], newSlides[index]] ;
       }
-      return { ...prev, slides: newSlides };
-    }) as any);
-  }, []);
+      return { ...(prev as unknown as Timeline | QuizTimeline | SingleQuizTimeline), slides: newSlides };
+    }) as unknown as Timeline | QuizTimeline | SingleQuizTimeline);
+  }, [timeline]);
 
   //FILE HANDLER
   const handleFileSelect = useCallback((file: File | null) => {
@@ -409,7 +414,13 @@ const Home: NextPage = () => {
     }
   }, [timeline, editPrompt]);
 
-
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="animate-pulse text-slate-400">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -754,8 +765,8 @@ const Home: NextPage = () => {
               component={(
                   mode === "education" ? EduMain : 
                   (quizFormat === "single" ? SingleQuizMain : DualQuizMain)
-              ) as any}
-              inputProps={timeline}
+              ) as unknown as React.ComponentType<unknown>}
+              inputProps={ timeline }
               durationInFrames={durationInFrames}
               fps={VIDEO_FPS}
               compositionHeight={
@@ -845,7 +856,7 @@ const Home: NextPage = () => {
                       {slide.type === "lottie" && `Animation: ${slide.animationType}`}
                       {slide.type === "threeD" && `3D Model`}
                       {slide.type === "quiz" && (slide.question)}
-                      {slide.type === "singleQuiz" && (slide.answer || slide.question)}
+                      {slide.type === "singleQuiz" && ( slide.question || slide.options.join(", "))}
                     </p>
                   </div>
 
@@ -889,7 +900,7 @@ const Home: NextPage = () => {
                 (quizFormat === "single" ? SINGLE_QUIZ_COMP :
                 (orientation === "portrait" ? QUIZ_COMP_PORTRAIT : QUIZ_COMP_LANDSCAPE))
             }
-            inputProps={timeline as any}
+            inputProps={timeline}
           />
         </div>
 

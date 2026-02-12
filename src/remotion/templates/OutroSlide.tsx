@@ -8,10 +8,10 @@ import {
     Html5Audio,
     interpolate,
     spring,
-    staticFile,
     useCurrentFrame,
     useVideoConfig
 } from "remotion";
+import { getAudioSrc } from "../utils/audio-src";
 import { GRADIENT_PRESETS, parseBackground } from "../utils/backgrounds";
 
 loadFont("normal", {
@@ -139,7 +139,7 @@ export const OutroSlide: React.FC<OutroSlideProps> = ({
           {callToAction}
         </div>
       </div>
-      {narrationUrl && <Html5Audio src={staticFile(narrationUrl)} />}
+      {narrationUrl && <Html5Audio src={getAudioSrc(narrationUrl)} />}
     </AbsoluteFill>
   );
 };

@@ -5,11 +5,11 @@ import {
     Html5Audio,
     Img, interpolate,
     spring,
-    staticFile,
     useCurrentFrame,
     useVideoConfig,
 } from "remotion";
 import { GRADIENT_PRESETS, parseBackground } from "../utils/backgrounds";
+import { getAudioSrc } from "../utils/audio-src";
 
 loadFont("normal", {
   subsets: ["latin"],
@@ -167,7 +167,7 @@ export const ImageSlide: React.FC<ImageSlideProps> = ({
           Photo: {creditText}
         </div>
       )}
-      {narrationUrl && <Html5Audio src={staticFile(narrationUrl)} />}
+      {narrationUrl && <Html5Audio src={getAudioSrc(narrationUrl)} />}
     </AbsoluteFill>
   );
 };

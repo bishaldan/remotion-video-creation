@@ -5,11 +5,11 @@ import {
     AbsoluteFill, continueRender,
     delayRender, Html5Audio, interpolate,
     spring,
-    staticFile,
     useCurrentFrame,
     useVideoConfig
 } from "remotion";
 import { GRADIENT_PRESETS, parseBackground } from "../utils/backgrounds";
+import { getAudioSrc } from "../utils/audio-src";
 
 loadFont("normal", {
   subsets: ["latin"],
@@ -219,7 +219,7 @@ export const LottieSlide: React.FC<LottieSlideProps> = ({
           </p>
         </div>
       </div>
-      {narrationUrl && <Html5Audio src={staticFile(narrationUrl)} />}
+      {narrationUrl && <Html5Audio src={getAudioSrc(narrationUrl)} />}
     </AbsoluteFill>
   );
 };

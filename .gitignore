@@ -51,3 +51,16 @@ build
 ./out
 out
 /out/
+
+# Ignore everything inside public/audio
+public/audio/*
+
+# Re-include the specific folders
+!public/audio/solar-system-quiz-enhanced-v4_quiz_2026-02-11/
+!public/audio/official-single-quiz-v5_singleQuiz_2026-02-11/
+!public/audio/official-education-v2_education_2026-02-11/
+
+# Re-include their contents
+!public/audio/solar-system-quiz-enhanced-v4_quiz_2026-02-11/**
+!public/audio/official-single-quiz-v5_singleQuiz_2026-02-11/**
+!public/audio/official-education-v2_education_2026-02-11/**

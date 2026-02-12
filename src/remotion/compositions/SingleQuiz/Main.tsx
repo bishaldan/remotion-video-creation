@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { linearTiming, TransitionSeries } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
 import React from "react";
@@ -70,6 +71,7 @@ export const SingleQuizMain: React.FC<z.infer<typeof SingleQuizTimelineSchema>> 
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
       <TransitionSeries>
         {slides.map((slide, index) => {
+          console.log(`[SingleQuiz] Rendering slide ${index}:`, JSON.stringify(slide, null, 2));
           const durationInSeconds = slide.durationInSeconds || 10;
           const durationInFrames = Math.round(durationInSeconds * VIDEO_FPS);
 

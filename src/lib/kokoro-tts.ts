@@ -267,6 +267,28 @@ export async function setNarrationUrls(
         const result = await generateTTS(text, `slide-${index}`, folderName, options);
         slide.narrationUrl = result.url;
 
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/fc87d80b-32df-4cea-9fe1-142209615e5e', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            id: `log_${Date.now()}_${index}`,
+            location: 'src/lib/kokoro-tts.ts:setNarrationUrls',
+            message: 'Generated Kokoro TTS for slide',
+            hypothesisId: 'H1',
+            runId: 'docker-audio',
+            timestamp: Date.now(),
+            data: {
+              index,
+              type: slide.type,
+              narrationUrl: slide.narrationUrl,
+              folderName,
+              durationSeconds: result.durationSeconds,
+            },
+          }),
+        }).catch(() => {});
+        // #endregion
+
         // For quiz slides: override duration with actual audio length + buffer
         const isQuiz = slide.type === "quiz" || slide.type === "singleQuiz";
         if (isQuiz) {
