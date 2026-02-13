@@ -18,7 +18,12 @@ Build dynamic, AI-powered educational and quiz videos using Next.js and Remotion
   - Mystery image reveal (pixelated to clear).
   - Side-by-side question/image layout.
 
-### 3. Professional Video Engineering
+### 3. Advanced Audio Engine
+- **Kokoro TTS (Local)**: High-quality, free-to-generate neural text-to-speech running locally via ONNX.
+- **Typecast Integration**: support for premium external AI voices.
+- **Smart Audio Management**: Background music ducking, precise sound effect timing, and caching strategies.
+
+### 4. Professional Video Engineering
 - **Remotion Engine**: Built on React for frame-perfect video rendering.
 - **Vibrant Aesthetics**: Modern glassmorphism, smooth gradients, and rich micro-animations.
 - **Transition Series**: High-quality fade and light leak transitions between scenes.
@@ -30,8 +35,10 @@ Build dynamic, AI-powered educational and quiz videos using Next.js and Remotion
 - **Framework**: [Next.js 14-15](https://nextjs.org/) (App Router)
 - **Video Engine**: [Remotion](https://www.remotion.dev/)
 - **AI Model**: [Google Gemini AI SDK](https://ai.google.dev/)
+- **TTS Engine**: [Kokoro JS](https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX) (Local) & custom integrations.
 - **3D Engine**: [React Three Fiber](https://docs.pmnd.rs/react-three-fiber) & [Drei](https://github.com/pmndrs/drei)
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **PDF Processing**: [unpdf](https://unjs.io/packages/unpdf) for efficient server-side extraction.
 - **State Management**: React Hooks & Zod (Schema Validation)
 
 ---
@@ -86,6 +93,11 @@ The codebase has been refactored for modularity and scalability:
   - `SingleQuiz/`: Mystery reveal quiz format.
 - **`src/remotion/templates/`**: Atomic slide components used across all modes.
 - **`src/lib/prompts.ts`**: Centralized system prompts for AI instruction management.
+- **`public/audio/`**: Organized audio storage:
+  - `kokoro/`: Locally generated voiceovers.
+  - `typecast/`: External API voiceovers.
+  - `sfx/`: Shared sound effects.
+  - `.gitignore` ensures generated audio is tracked correctly while allowing defaults.
 
 ---
 
