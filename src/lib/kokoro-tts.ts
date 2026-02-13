@@ -5,47 +5,8 @@ import path from "path";
 // Kokoro Configuration
 const MODEL_ID = "onnx-community/Kokoro-82M-v1.0-ONNX";
 
-/**
- * All available Kokoro-JS voices (free, open-source).
- * Change `options.voice` to any key below to experiment.
- */
-export const KOKORO_VOICES: Record<string, { name: string; gender: string; accent: string }> = {
-  // ── American English — Female ───────────────────────────────────────────
-  af_alloy:    { name: "Alloy",    gender: "female", accent: "American" },
-  af_aoede:    { name: "Aoede",    gender: "female", accent: "American" },
-  af_bella:    { name: "Bella",    gender: "female", accent: "American" },
-  af_heart:    { name: "Heart",    gender: "female", accent: "American" },
-  af_jessica:  { name: "Jessica",  gender: "female", accent: "American" },
-  af_kore:     { name: "Kore",     gender: "female", accent: "American" },
-  af_nicole:   { name: "Nicole",   gender: "female", accent: "American" },
-  af_nova:     { name: "Nova",     gender: "female", accent: "American" },
-  af_river:    { name: "River",    gender: "female", accent: "American" },
-  af_sarah:    { name: "Sarah",    gender: "female", accent: "American" },
-  af_sky:      { name: "Sky",      gender: "female", accent: "American" },
-
-  // ── American English — Male ─────────────────────────────────────────────
-  am_adam:     { name: "Adam",     gender: "male",   accent: "American" },
-  am_echo:     { name: "Echo",     gender: "male",   accent: "American" },
-  am_eric:     { name: "Eric",     gender: "male",   accent: "American" },
-  am_fenrir:   { name: "Fenrir",   gender: "male",   accent: "American" },
-  am_liam:     { name: "Liam",     gender: "male",   accent: "American" },
-  am_michael:  { name: "Michael",  gender: "male",   accent: "American" },
-  am_onyx:     { name: "Onyx",     gender: "male",   accent: "American" },
-  am_puck:     { name: "Puck",     gender: "male",   accent: "American" },
-  am_santa:    { name: "Santa",    gender: "male",   accent: "American" },
-
-  // ── British English — Female ────────────────────────────────────────────
-  bf_alice:    { name: "Alice",    gender: "female", accent: "British" },
-  bf_emma:     { name: "Emma",     gender: "female", accent: "British" },
-  bf_isabella: { name: "Isabella", gender: "female", accent: "British" },
-  bf_lily:     { name: "Lily",     gender: "female", accent: "British" },
-
-  // ── British English — Male ──────────────────────────────────────────────
-  bm_daniel:   { name: "Daniel",   gender: "male",   accent: "British" },
-  bm_fable:    { name: "Fable",    gender: "male",   accent: "British" },
-  bm_george:   { name: "George",   gender: "male",   accent: "British" },
-  bm_lewis:    { name: "Lewis",    gender: "male",   accent: "British" },
-};
+import { KOKORO_VOICES } from "./voice-constants";
+export { KOKORO_VOICES };
 
 export interface KokoroOptions {
   voice?: string;
