@@ -6,7 +6,9 @@ import {
   Img,
   interpolate,
   interpolateColors,
+  Sequence,
   spring,
+  staticFile,
   useCurrentFrame,
   useVideoConfig
 } from "remotion";
@@ -26,6 +28,7 @@ export interface SingleQuizSlideProps {
   backgroundColor?: string;
   durationInSeconds?: number;
   revealTimeSeconds?: number;
+  startFromSeconds?: number;
   questionNumber: number;
   quizTitle: string;
   narrationUrl?: string;
@@ -83,6 +86,7 @@ export const SingleQuizSlide: React.FC<SingleQuizSlideProps> = ({
   backgroundColor = "#c2185b",
   durationInSeconds = 10,
   revealTimeSeconds,
+  startFromSeconds,
   questionNumber,
   quizTitle,
   narrationUrl,
@@ -426,6 +430,14 @@ export const SingleQuizSlide: React.FC<SingleQuizSlideProps> = ({
         }}
       />
       {narrationUrl && <Html5Audio src={getAudioSrc(narrationUrl)} />}
+
+      {/* Quiz Sound Effects */}
+      <Sequence from={Math.round((startFromSeconds || 0) * fps)} durationInFrames={Math.max(1, Math.round(revealFrame - 0.25 * fps) - Math.round((startFromSeconds || 0) * fps))}>
+        <Html5Audio src={staticFile("audio/sfx/clock/tick.mp3")} loop volume={0.3} />
+      </Sequence>
+      <Sequence from={Math.round(revealFrame)} durationInFrames={Math.round(1.5 * fps)}>
+        <Html5Audio src={staticFile("audio/sfx/clock/correct.mp3")} volume={0.3} />
+      </Sequence>
     </AbsoluteFill>
   );
 };

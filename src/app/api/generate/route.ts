@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     let timeline: Timeline | QuizTimeline | SingleQuizTimeline;
     try {
       timeline = JSON.parse(cleanedText);
-      console.log('POST TIMELINE:', JSON.stringify(timeline, null, 2));
+
       
       // Ensure mode/orientation on root object
       if (mode === "quiz") {
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
           // Single quiz is always landscape effectively, but we can store it if needed
       }
       
-      console.log('Generated Timeline:', JSON.stringify(timeline, null, 2));
+
 
       
       await setImagesUrl(timeline, orientation);
@@ -129,7 +129,7 @@ export async function PATCH(request: NextRequest) {
          (newTimeline as any).mode = "singleQuiz";
       }
       
-      console.log('Edited Timeline:', JSON.stringify(newTimeline, null, 2));
+
 
       await setImagesUrl(newTimeline, orientation);
       if (voiceType === "typecast") {

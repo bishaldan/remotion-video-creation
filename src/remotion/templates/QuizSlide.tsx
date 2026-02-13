@@ -6,7 +6,9 @@ import {
   Img,
   interpolate,
   interpolateColors,
+  Sequence,
   spring,
+  staticFile,
   useCurrentFrame,
   useVideoConfig
 } from "remotion";
@@ -25,6 +27,7 @@ export interface QuizSlideProps {
   backgroundQuery?: string;
   durationInSeconds?: number;
   revealTimeSeconds?: number;
+  startFromSeconds?: number;
   narrationUrl?: string;
 }
 
@@ -36,10 +39,12 @@ export const DualQuizSlide: React.FC<QuizSlideProps> = ({
   backgroundQuery,
   durationInSeconds = 7,
   revealTimeSeconds,
+  startFromSeconds,
   narrationUrl,
 }) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
+  console.log("==================THIS IS DUAL QUIZ==================", startFromSeconds);
 
   // Answer reveal: use exact audio timestamp if available, else fallback to 89%
   const revealFrame = revealTimeSeconds 
@@ -226,6 +231,14 @@ export const DualQuizSlide: React.FC<QuizSlideProps> = ({
         }} />
 
         {narrationUrl && <Html5Audio src={getAudioSrc(narrationUrl)} />}
+
+        {/* Quiz Sound Effects */}
+        <Sequence from={Math.round((startFromSeconds || 0) * fps)} durationInFrames={Math.max(1, Math.round(revealFrame - 0.25 * fps) - Math.round((startFromSeconds || 0) * fps))}>
+          <Html5Audio src={staticFile("audio/sfx/clock/tick.mp3")} loop volume={0.3} />
+        </Sequence>
+        <Sequence from={Math.round(revealFrame)} durationInFrames={Math.round(1.5 * fps)}>
+          <Html5Audio src={staticFile("audio/sfx/clock/correct.mp3")} volume={0.6} />
+        </Sequence>
       </AbsoluteFill>
     </AbsoluteFill>
   );

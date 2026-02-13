@@ -1,114 +1,307 @@
 /**
- * Unsplash API utility for fetching stock images
- * Requires UNSPLASH_ACCESS_KEY environment variable
+ * Image Search Service with Cascading Fallback
+ *
+ * Fallback chain: Unsplash → Pexels → Pixabay → Wikimedia Commons
+ *
+ * Environment variables (all optional — system works with zero config via Wikimedia):
+ *   UNSPLASH_ACCESS_KEY  — primary source, curated photography
+ *   PEXELS_API_KEY       — second tier, high quality
+ *   PIXABAY_API_KEY      — third tier, 5M+ images
+ *   (Wikimedia needs no key)
  */
 
-import { Timeline } from "../../types/edu";
-import { QuizTimeline, SingleQuizTimeline } from "../../types/quiz";
+import { Timeline } from "../../../types/edu";
+import { QuizTimeline, SingleQuizTimeline } from "../../../types/quiz";
 
-const UNSPLASH_API_URL = "https://api.unsplash.com";
+// ─────────────────────────────────────────────────────────────────
+// Shared types
+// ─────────────────────────────────────────────────────────────────
 
-export interface UnsplashImage {
+export interface ImageResult {
   id: string;
   url: string;
   thumbUrl: string;
   alt: string;
   photographer: string;
   photographerUrl: string;
+  source: "unsplash" | "pexels" | "pixabay" | "wikimedia";
 }
 
-/**
- * Search for images on Unsplash
- * @param query - Search keywords
- * @param orientation - Image orientation (landscape recommended for video)
- */
-export async function searchUnsplash(
+// Keep the old name for backward compat
+export type UnsplashImage = ImageResult;
+
+// ─────────────────────────────────────────────────────────────────
+// 1. Unsplash
+// ─────────────────────────────────────────────────────────────────
+
+async function searchUnsplashProvider(
   query: string,
-  orientation: "landscape" | "portrait" | "squarish" = "landscape"
-): Promise<UnsplashImage | null> {
+  orientation: "landscape" | "portrait" | "squarish"
+): Promise<ImageResult | null> {
   const accessKey = process.env.UNSPLASH_ACCESS_KEY;
-  
-  if (!accessKey) {
-    console.warn("UNSPLASH_ACCESS_KEY not set, using placeholder image");
-    return getPlaceholderImage(query);
-  }
+  if (!accessKey) return null;
 
   try {
-    const params = new URLSearchParams({
-      query,
-      orientation,
-      per_page: "1",
-    });
-
+    const params = new URLSearchParams({ query, orientation, per_page: "1" });
     const response = await fetch(
-      `${UNSPLASH_API_URL}/search/photos?${params}`,
-      {
-        headers: {
-          Authorization: `Client-ID ${accessKey}`,
-        },
-      }
+      `https://api.unsplash.com/search/photos?${params}`,
+      { headers: { Authorization: `Client-ID ${accessKey}` } }
     );
 
     if (!response.ok) {
-      console.error("Unsplash API error:", response.status);
-      return getPlaceholderImage(query);
+      console.warn(`[Unsplash] API error ${response.status} for "${query}"`);
+      return null;
     }
 
     const data = await response.json();
-    
-    if (!data.results || data.results.length === 0) {
-      console.warn(`No Unsplash results for query: ${query}`);
-      return getPlaceholderImage(query);
+    if (!data.results?.length) {
+      console.warn(`[Unsplash] No results for "${query}"`);
+      return null;
     }
 
     const photo = data.results[0];
-    
     return {
       id: photo.id,
-      url: photo.urls.regular, // 1080px width
+      url: photo.urls.regular,
       thumbUrl: photo.urls.thumb,
       alt: photo.alt_description || query,
       photographer: photo.user.name,
       photographerUrl: photo.user.links.html,
+      source: "unsplash",
     };
   } catch (error) {
-    console.error("Unsplash fetch error:", error);
-    return getPlaceholderImage(query);
+    console.error("[Unsplash] Fetch error:", error);
+    return null;
   }
 }
 
-/**
- * Get a placeholder image when Unsplash is unavailable
- * Uses a gradient placeholder with the query text
- */
-function getPlaceholderImage(query: string): UnsplashImage {
-  // Use Unsplash Source for a random image based on query (no API key needed)
-  // This is a fallback that still provides relevant images
-  const encodedQuery = encodeURIComponent(query);
-  return {
-    id: `placeholder-${Date.now()}`,
-    url: `https://source.unsplash.com/1920x1080/?${encodedQuery}`,
-    thumbUrl: `https://source.unsplash.com/400x300/?${encodedQuery}`,
-    alt: query,
-    photographer: "Unsplash",
-    photographerUrl: "https://unsplash.com",
-  };
+// ─────────────────────────────────────────────────────────────────
+// 2. Pexels
+// ─────────────────────────────────────────────────────────────────
+
+async function searchPexels(
+  query: string,
+  orientation: "landscape" | "portrait" | "squarish"
+): Promise<ImageResult | null> {
+  const apiKey = process.env.PEXELS_API_KEY;
+  if (!apiKey) return null;
+
+  try {
+    const pexelsOrientation = orientation === "squarish" ? "landscape" : orientation;
+    const params = new URLSearchParams({
+      query,
+      orientation: pexelsOrientation,
+      per_page: "1",
+    });
+
+    const response = await fetch(
+      `https://api.pexels.com/v1/search?${params}`,
+      { headers: { Authorization: apiKey } }
+    );
+
+    if (!response.ok) {
+      console.warn(`[Pexels] API error ${response.status} for "${query}"`);
+      return null;
+    }
+
+    const data = await response.json();
+    if (!data.photos?.length) {
+      console.warn(`[Pexels] No results for "${query}"`);
+      return null;
+    }
+
+    const photo = data.photos[0];
+    return {
+      id: String(photo.id),
+      url: photo.src.large2x || photo.src.large,
+      thumbUrl: photo.src.small,
+      alt: photo.alt || query,
+      photographer: photo.photographer,
+      photographerUrl: photo.photographer_url,
+      source: "pexels",
+    };
+  } catch (error) {
+    console.error("[Pexels] Fetch error:", error);
+    return null;
+  }
 }
 
-/**
- * Batch fetch multiple images for a timeline
- */
-export async function batchSearchUnsplash(
+// ─────────────────────────────────────────────────────────────────
+// 3. Pixabay
+// ─────────────────────────────────────────────────────────────────
+
+async function searchPixabay(
+  query: string,
+  orientation: "landscape" | "portrait" | "squarish"
+): Promise<ImageResult | null> {
+  const apiKey = process.env.PIXABAY_API_KEY;
+  if (!apiKey) return null;
+
+  try {
+    const pixabayOrientation = orientation === "squarish" ? "horizontal" : orientation === "portrait" ? "vertical" : "horizontal";
+    const params = new URLSearchParams({
+      key: apiKey,
+      q: query,
+      orientation: pixabayOrientation,
+      per_page: "3",
+      image_type: "photo",
+      safesearch: "true",
+    });
+
+    const response = await fetch(`https://pixabay.com/api/?${params}`);
+
+    if (!response.ok) {
+      console.warn(`[Pixabay] API error ${response.status} for "${query}"`);
+      return null;
+    }
+
+    const data = await response.json();
+    if (!data.hits?.length) {
+      console.warn(`[Pixabay] No results for "${query}"`);
+      return null;
+    }
+
+    const photo = data.hits[0];
+    return {
+      id: String(photo.id),
+      url: photo.largeImageURL,
+      thumbUrl: photo.previewURL,
+      alt: photo.tags || query,
+      photographer: photo.user,
+      photographerUrl: `https://pixabay.com/users/${photo.user_id}/`,
+      source: "pixabay",
+    };
+  } catch (error) {
+    console.error("[Pixabay] Fetch error:", error);
+    return null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// 4. Wikimedia Commons (no API key needed)
+// ─────────────────────────────────────────────────────────────────
+
+async function searchWikimedia(
+  query: string
+): Promise<ImageResult | null> {
+  try {
+    const params = new URLSearchParams({
+      action: "query",
+      generator: "search",
+      gsrsearch: query,
+      gsrnamespace: "6", // File namespace
+      gsrlimit: "5",
+      prop: "imageinfo",
+      iiprop: "url|extmetadata|size",
+      iiurlwidth: "1920",
+      format: "json",
+      origin: "*",
+    });
+
+    const response = await fetch(
+      `https://commons.wikimedia.org/w/api.php?${params}`
+    );
+
+    if (!response.ok) {
+      console.warn(`[Wikimedia] API error ${response.status} for "${query}"`);
+      return null;
+    }
+
+    const data = await response.json();
+    const pages = data.query?.pages;
+    if (!pages) {
+      console.warn(`[Wikimedia] No results for "${query}"`);
+      return null;
+    }
+
+    // Find the first actual image (not .svg, .ogg, etc.)
+    const imageExtensions = [".jpg", ".jpeg", ".png", ".webp"];
+    const entries = Object.values(pages) as any[];
+    const image = entries.find((page: any) => {
+      const title = (page.title || "").toLowerCase();
+      return imageExtensions.some((ext) => title.endsWith(ext));
+    });
+
+    if (!image?.imageinfo?.length) {
+      console.warn(`[Wikimedia] No suitable image found for "${query}"`);
+      return null;
+    }
+
+    const info = image.imageinfo[0];
+    const meta = info.extmetadata || {};
+    const artist = meta.Artist?.value?.replace(/<[^>]*>/g, "") || "Wikimedia";
+
+    return {
+      id: `wiki-${image.pageid}`,
+      url: info.thumburl || info.url,
+      thumbUrl: info.thumburl || info.url,
+      alt: meta.ImageDescription?.value?.replace(/<[^>]*>/g, "")?.slice(0, 200) || query,
+      photographer: artist,
+      photographerUrl: info.descriptionurl || "https://commons.wikimedia.org",
+      source: "wikimedia",
+    };
+  } catch (error) {
+    console.error("[Wikimedia] Fetch error:", error);
+    return null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Cascading search: try each provider in order
+// ─────────────────────────────────────────────────────────────────
+
+export async function searchImage(
+  query: string,
+  orientation: "landscape" | "portrait" | "squarish" = "landscape"
+): Promise<ImageResult | null> {
+  // 1. Unsplash (primary)
+  const unsplash = await searchUnsplashProvider(query, orientation);
+  if (unsplash) {
+    console.log(`  ✓ [Image] "${query}" → Unsplash`);
+    return unsplash;
+  }
+
+  // 2. Pexels (if API key set)
+  const pexels = await searchPexels(query, orientation);
+  if (pexels) {
+    console.log(`  ✓ [Image] "${query}" → Pexels (fallback)`);
+    return pexels;
+  }
+
+  // 3. Pixabay (if API key set)
+  const pixabay = await searchPixabay(query, orientation);
+  if (pixabay) {
+    console.log(`  ✓ [Image] "${query}" → Pixabay (fallback)`);
+    return pixabay;
+  }
+
+  // 4. Wikimedia Commons (always available, no key needed)
+  const wiki = await searchWikimedia(query);
+  if (wiki) {
+    console.log(`  ✓ [Image] "${query}" → Wikimedia Commons (fallback)`);
+    return wiki;
+  }
+
+  console.warn(`  ✗ [Image] "${query}" → No image found from any provider`);
+  return null;
+}
+
+// Keep old name as alias for backward compat
+export const searchUnsplash = searchImage;
+
+// ─────────────────────────────────────────────────────────────────
+// Batch fetch
+// ─────────────────────────────────────────────────────────────────
+
+export async function batchSearchImages(
   queries: string[],
   orientation: "landscape" | "portrait" | "squarish" = "landscape"
-): Promise<Map<string, UnsplashImage | null>> {
-  const results = new Map<string, UnsplashImage | null>();
-  
-  // Fetch in parallel with a small delay to avoid rate limiting
+): Promise<Map<string, ImageResult | null>> {
+  const results = new Map<string, ImageResult | null>();
+
   const promises = queries.map(async (query, index) => {
-    // Stagger requests by 100ms each
-    await new Promise((resolve) => setTimeout(resolve, index * 100));
-    const image = await searchUnsplash(query, orientation);
+    await new Promise((resolve) => setTimeout(resolve, index * 150));
+    const image = await searchImage(query, orientation);
     results.set(query, image);
   });
 
@@ -116,53 +309,50 @@ export async function batchSearchUnsplash(
   return results;
 }
 
-export async function setImagesUrl(timeline: Timeline | QuizTimeline | SingleQuizTimeline, orientation: "landscape" | "portrait" | "squarish" = "landscape") {
-      const imageQueries: string[] = [];
-      const imageSlides: number[] = [];
+// Keep old name as alias
+export const batchSearchUnsplash = batchSearchImages;
 
-      // Identify image slides and collect queries
-      timeline.slides.forEach((slide: any, index: number) => {
-        if (slide.type === "image" && slide.imageQuery) {
-          imageQueries.push(slide.imageQuery);
-          imageSlides.push(index);
-        } else if (slide.type === "quiz" && slide.backgroundQuery) {
-          imageQueries.push(slide.backgroundQuery);
-          imageSlides.push(index);
-        } else if (slide.type === "singleQuiz" && slide.imageQuery) {
-          imageQueries.push(slide.imageQuery);
-          imageSlides.push(index);
-        }
-      });
+// ─────────────────────────────────────────────────────────────────
+// setImagesUrl — resolve image URLs for an entire timeline
+// ─────────────────────────────────────────────────────────────────
 
-      // Batch fetch from Unsplash
-      if (imageQueries.length > 0) {
-        console.log("Fetching Unsplash images for:", imageQueries);
-        
-        const imagesMap = await batchSearchUnsplash(imageQueries, orientation);
-        // await Promise.all(imageQueries.map(async (query, i) => {
-        //      await new Promise(r => setTimeout(r, i * 50));
-        //      const searchOrientation = orientation === "portrait" ? "portrait" : "landscape";
-        //      const image = await batchSearchUnsplash(query, searchOrientation);
-        //      imagesMap.set(query, image);
-        // }));
+export async function setImagesUrl(
+  timeline: Timeline | QuizTimeline | SingleQuizTimeline,
+  orientation: "landscape" | "portrait" | "squarish" = "landscape"
+) {
+  const imageQueries: string[] = [];
+  const imageSlides: number[] = [];
 
-        // Update slides with resolved URLs
-        for (let i = 0; i < imageSlides.length; i++) {
-          const slideIndex = imageSlides[i];
-          const query = imageQueries[i];
-          const image = imagesMap.get(query);
-          const slide = timeline.slides[slideIndex] as any;
-          
-          if (image) {
-             if (slide.type === "image") slide.imageUrl = image.url;
-             else if (slide.type === "quiz") slide.backgroundUrl = image.url;
-             else if (slide.type === "singleQuiz") slide.imageUrl = image.url;
-          } else {
-              const fallbackUrl = `https://source.unsplash.com/${orientation === 'portrait' ? '1080x1920' : '1920x1080'}/?${encodeURIComponent(query)}`;
-              if (slide.type === "image") slide.imageUrl = fallbackUrl;
-              else if (slide.type === "quiz") slide.backgroundUrl = fallbackUrl;
-              else if (slide.type === "singleQuiz") slide.imageUrl = fallbackUrl;
-          }
-        }
+  timeline.slides.forEach((slide: any, index: number) => {
+    if (slide.type === "image" && slide.imageQuery) {
+      imageQueries.push(slide.imageQuery);
+      imageSlides.push(index);
+    } else if (slide.type === "quiz" && slide.backgroundQuery) {
+      imageQueries.push(slide.backgroundQuery);
+      imageSlides.push(index);
+    } else if (slide.type === "singleQuiz" && slide.imageQuery) {
+      imageQueries.push(slide.imageQuery);
+      imageSlides.push(index);
+    }
+  });
+
+  if (imageQueries.length > 0) {
+    console.log("Fetching images for:", imageQueries);
+
+    const imagesMap = await batchSearchImages(imageQueries, orientation);
+
+    for (let i = 0; i < imageSlides.length; i++) {
+      const slideIndex = imageSlides[i];
+      const query = imageQueries[i];
+      const image = imagesMap.get(query);
+      const slide = timeline.slides[slideIndex] as any;
+
+      if (image) {
+        if (slide.type === "image") slide.imageUrl = image.url;
+        else if (slide.type === "quiz") slide.backgroundUrl = image.url;
+        else if (slide.type === "singleQuiz") slide.imageUrl = image.url;
       }
+      // No more deprecated source.unsplash.com fallback — the cascade handles it
+    }
+  }
 }

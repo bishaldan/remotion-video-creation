@@ -18,7 +18,12 @@ export interface TTSResult {
   url: string;
   durationSeconds: number;
   revealTimeSeconds?: number; // When the answer narration begins (quiz only)
+  questionAndOptionsEndSeconds?: number; // When the question reading ends (pause starts)
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UTILITIES
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Sanitizes a string to be used as a folder name.
@@ -71,6 +76,11 @@ async function getTTSModel() {
 function getAudioDuration(audioData: Float32Array, sampleRate: number): number {
     return audioData.length / sampleRate;
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TTS GENERATION
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Generates an audio file from text using local Kokoro TTS.
@@ -125,6 +135,7 @@ export async function generateTTS(
 interface CombinedTTSResult {
     durationSeconds: number;
     revealTimeSeconds?: number;
+    questionAndOptionsEndSeconds?: number;
 }
 
 /**
@@ -159,16 +170,18 @@ async function generateCombinedTTS(
     for (const p of generatedParts) {
         partStartTimes.push(totalLength / samplingRate); // Start time of this part in seconds
         totalLength += p.audio.audio.length;
+
         totalLength += Math.floor(p.pauseAfter * samplingRate);
     }
 
     const combinedBuffer = new Float32Array(totalLength);
     let offset = 0;
+    let questionAndOptionsEnd = [];
 
     for (const p of generatedParts) {
         combinedBuffer.set(p.audio.audio, offset);
         offset += p.audio.audio.length;
-        
+        questionAndOptionsEnd.push(offset);
         const silenceSamples = Math.floor(p.pauseAfter * samplingRate);
         if (silenceSamples > 0) {
             combinedBuffer.set(new Float32Array(silenceSamples).fill(0), offset);
@@ -187,9 +200,20 @@ async function generateCombinedTTS(
     const revealTimeSeconds = partStartTimes.length > 1 
         ? partStartTimes[partStartTimes.length - 1] 
         : undefined;
+    
+    // Convert sample offset to seconds
+    const questionAndOptionsEndSeconds = questionAndOptionsEnd.length > 0 
+        ? questionAndOptionsEnd[0] / samplingRate 
+        : undefined;
 
-    return { durationSeconds, revealTimeSeconds };
+    return { durationSeconds, revealTimeSeconds, questionAndOptionsEndSeconds };
 }
+
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TEXT FORMATERS
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Formats quiz options with letters (A, B, C, D) and adds a reveal for the correct answer.
@@ -267,6 +291,7 @@ export async function setNarrationUrls(
   for (let index = 0; index < timeline.slides.length; index++) {
     const slide = timeline.slides[index];
     const text = getNarrationText(slide);
+    
     if (text) {
       try {
         const result = await generateTTS(text, `slide-${index}`, folderName, options);
@@ -279,7 +304,8 @@ export async function setNarrationUrls(
           // Add 1.5s buffer after audio ends for visual breathing room
           slide.durationInSeconds = Math.round((audioDuration + 1.5) * 2) / 2; // Round to nearest 0.5s
           slide.revealTimeSeconds = result.revealTimeSeconds;
-          console.log(`    → Slide ${index}: duration=${slide.durationInSeconds}s, reveal@${slide.revealTimeSeconds?.toFixed(1)}s`);
+          slide.startFromSeconds = result.questionAndOptionsEndSeconds;
+          console.log(`    → Slide ${index}: duration=${slide.durationInSeconds}s, reveal@${slide.revealTimeSeconds?.toFixed(1)}s, startTick@${slide.startFromSeconds?.toFixed(1)}s`);
         }
       } catch (error) {
         console.error(`Failed to generate TTS for slide ${index}:`, error);

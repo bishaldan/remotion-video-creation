@@ -27,6 +27,7 @@ export interface TTSResult {
   url: string;
   durationSeconds: number;
   revealTimeSeconds?: number; // When the answer narration begins (quiz only)
+  questionAndOptionsEndSeconds?: number; // When the question reading ends (pause starts)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -211,6 +212,7 @@ export async function generateTTS(
 interface CombinedTTSResult {
   durationSeconds: number;
   revealTimeSeconds?: number;
+  questionAndOptionsEndSeconds?: number;
 }
 
 /**
@@ -257,10 +259,13 @@ async function generateCombinedTTS(
   // Build combined PCM buffer
   const combinedPCM = Buffer.alloc(totalBytes);
   let offset = 0;
+  const questionAndOptionsEnd: number[] = [];
 
   for (const p of pcmParts) {
     p.data.copy(combinedPCM, offset);
     offset += p.data.length;
+    // Track where each part's audio ends (before the silence gap)
+    questionAndOptionsEnd.push(offset);
 
     const silenceBytes = Math.floor(p.pauseAfter * sampleRate * numChannels * bytesPerSample);
     if (silenceBytes > 0) {
@@ -273,12 +278,17 @@ async function generateCombinedTTS(
   const wavBuffer = createWavBuffer(combinedPCM, sampleRate, numChannels, bitsPerSample);
   fs.writeFileSync(filePath, wavBuffer);
 
-  const durationSeconds = totalBytes / (sampleRate * numChannels * bytesPerSample);
+  const bytesPerSecond = sampleRate * numChannels * bytesPerSample;
+  const durationSeconds = totalBytes / bytesPerSecond;
   const revealTimeSeconds = partStartTimes.length > 1
     ? partStartTimes[partStartTimes.length - 1]
     : undefined;
+  // Convert byte offset of first part's end to seconds
+  const questionAndOptionsEndSeconds = questionAndOptionsEnd.length > 0
+    ? questionAndOptionsEnd[0] / bytesPerSecond
+    : undefined;
 
-  return { durationSeconds, revealTimeSeconds };
+  return { durationSeconds, revealTimeSeconds, questionAndOptionsEndSeconds };
 }
 
 /**
@@ -404,7 +414,8 @@ export async function setNarrationUrls(
           const audioDuration = result.durationSeconds;
           slide.durationInSeconds = Math.round((audioDuration + 1.5) * 2) / 2;
           slide.revealTimeSeconds = result.revealTimeSeconds;
-          console.log(`    → Slide ${index}: duration=${slide.durationInSeconds}s, reveal@${slide.revealTimeSeconds?.toFixed(1)}s`);
+          slide.startFromSeconds = result.questionAndOptionsEndSeconds;
+          console.log(`    → Slide ${index}: duration=${slide.durationInSeconds}s, reveal@${slide.revealTimeSeconds?.toFixed(1)}s, startTick@${slide.startFromSeconds?.toFixed(1)}s`);
         }
       } catch (error) {
         console.error(`Failed to generate TTS for slide ${index}:`, error);

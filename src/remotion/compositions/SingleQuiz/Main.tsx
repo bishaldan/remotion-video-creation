@@ -2,7 +2,7 @@
 import { linearTiming, TransitionSeries } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
 import React from "react";
-import { AbsoluteFill } from "remotion";
+import { AbsoluteFill, Html5Audio, Sequence, staticFile } from "remotion";
 import { z } from "zod";
 import { SingleQuizTimelineSchema } from "../../../../types/quiz";
 import { VIDEO_FPS } from "../../../../types/shared";
@@ -43,6 +43,7 @@ export const SingleQuizMain: React.FC<z.infer<typeof SingleQuizTimelineSchema>> 
             backgroundColor={slide.backgroundColor}
             durationInSeconds={slide.durationInSeconds}
             revealTimeSeconds={slide.revealTimeSeconds}
+            startFromSeconds={slide.startFromSeconds}
             questionNumber={qNum}
             quizTitle={title}
             narrationUrl={slide.narrationUrl}
@@ -67,11 +68,17 @@ export const SingleQuizMain: React.FC<z.infer<typeof SingleQuizTimelineSchema>> 
     }
   };
 
+  // Calculate background music window (after intro, before outro)
+  const introFrames = Math.round((slides[0]?.durationInSeconds || 5) * VIDEO_FPS);
+  const outroFrames = Math.round((slides[slides.length - 1]?.durationInSeconds || 5) * VIDEO_FPS);
+  const totalFrames = calculateSingleQuizDuration(slides, VIDEO_FPS);
+  const bgMusicFrom = introFrames - TRANSITION_DURATION;
+  const bgMusicDuration = Math.max(1, totalFrames - bgMusicFrom - outroFrames + TRANSITION_DURATION);
+
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
       <TransitionSeries>
         {slides.map((slide, index) => {
-          console.log(`[SingleQuiz] Rendering slide ${index}:`, JSON.stringify(slide, null, 2));
           const durationInSeconds = slide.durationInSeconds || 10;
           const durationInFrames = Math.round(durationInSeconds * VIDEO_FPS);
 
@@ -98,6 +105,11 @@ export const SingleQuizMain: React.FC<z.infer<typeof SingleQuizTimelineSchema>> 
           );
         })}
       </TransitionSeries>
+
+      {/* Background music — plays between intro and outro */}
+      <Sequence from={bgMusicFrom} durationInFrames={bgMusicDuration}>
+        <Html5Audio src={staticFile("audio/sfx/bg/mysterious-background.mp3")} loop volume={0.15} />
+      </Sequence>
     </AbsoluteFill>
   );
 };
