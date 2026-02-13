@@ -6,32 +6,32 @@ import type { NextPage } from "next";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import {
-    defaultEduCompProps,
-    EDU_COMP_NAME,
-    TimelineSchema,
-    type Timeline
+  defaultEduCompProps,
+  EDU_COMP_NAME,
+  TimelineSchema,
+  type Timeline
 } from "../../types/edu";
 import {
-    defaultDualQuizTimeline,
-    defaultSingleQuizTimeline,
-    DualQuizTimelineSchema,
-    QUIZ_COMP_LANDSCAPE,
-    QUIZ_COMP_PORTRAIT,
-    QUIZ_HEIGHT_LANDSCAPE,
-    QUIZ_HEIGHT_PORTRAIT,
-    QUIZ_WIDTH_LANDSCAPE,
-    QUIZ_WIDTH_PORTRAIT,
-    SINGLE_QUIZ_COMP,
-    SINGLE_QUIZ_HEIGHT,
-    SINGLE_QUIZ_WIDTH,
-    SingleQuizTimelineSchema,
-    type QuizTimeline,
-    type SingleQuizTimeline
+  defaultDualQuizTimeline,
+  defaultSingleQuizTimeline,
+  DualQuizTimelineSchema,
+  QUIZ_COMP_LANDSCAPE,
+  QUIZ_COMP_PORTRAIT,
+  QUIZ_HEIGHT_LANDSCAPE,
+  QUIZ_HEIGHT_PORTRAIT,
+  QUIZ_WIDTH_LANDSCAPE,
+  QUIZ_WIDTH_PORTRAIT,
+  SINGLE_QUIZ_COMP,
+  SINGLE_QUIZ_HEIGHT,
+  SINGLE_QUIZ_WIDTH,
+  SingleQuizTimelineSchema,
+  type QuizTimeline,
+  type SingleQuizTimeline
 } from "../../types/quiz";
 import {
-    VIDEO_FPS,
-    VIDEO_HEIGHT,
-    VIDEO_WIDTH
+  VIDEO_FPS,
+  VIDEO_HEIGHT,
+  VIDEO_WIDTH
 } from "../../types/shared";
 import { LocalRenderControls } from "../components/LocalRenderControls";
 import { Spacing } from "../components/Spacing";
@@ -712,6 +712,114 @@ const Home: NextPage = () => {
               )}
             </button>
           </div>
+        {/* Voice Preview Section */}
+        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-8">
+            <h2 className="text-xl font-semibold text-white mb-4">Voice Selection</h2>
+            <div className="flex flex-col md:flex-row gap-4 items-center">
+                <select 
+                    className="flex-1 px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    onChange={(e) => {
+                        const voiceId = e.target.value;
+                        const audioPlayer = document.getElementById('voice-preview-player') as HTMLAudioElement;
+                        if (audioPlayer) {
+                            // Find details to construct filename: [key]_[gender]_[accent].wav
+                            // We need to import KOKORO_VOICES or reconstruct the logic here.
+                            // Since KOKORO_VOICES is server-side, we should probably pass it or hardcode logic if needed.
+                            // Or better: update the script to name files just by voiceID to keep it simple?
+                            // No, script uses: `${voiceId}_${details.gender}_${details.accent}.wav`
+                            // Let's grab the data-attribute or just require the user to select from a list we populate.
+                            
+                            // To make this robust, we should move KOKORO_VOICES to a shared file or redefine it. 
+                            // For now, let's assume we populate options with the correct filename as value.
+                            audioPlayer.src = `/audio/kokoro/${voiceId}`;
+                            audioPlayer.play().catch(() => {});
+                        }
+                    }}
+                >
+                    <option value="">Select a voice to preview...</option>
+                    {/* American Female */}
+                    <optgroup label="🇺🇸 American Female">
+                        <option value="af_alloy_female_American.wav">Alloy</option>
+                        <option value="af_aoede_female_American.wav">Aoede</option>
+                        <option value="af_bella_female_American.wav">Bella</option>
+                        <option value="af_heart_female_American.wav">Heart</option>
+                        <option value="af_jessica_female_American.wav">Jessica</option>
+                        <option value="af_kore_female_American.wav">Kore</option>
+                        <option value="af_nicole_female_American.wav">Nicole</option>
+                        <option value="af_nova_female_American.wav">Nova</option>
+                        <option value="af_river_female_American.wav">River</option>
+                        <option value="af_sarah_female_American.wav">Sarah</option>
+                        <option value="af_sky_female_American.wav">Sky</option>
+                    </optgroup>
+                    {/* American Male */}
+                    <optgroup label="🇺🇸 American Male">
+                        <option value="am_adam_male_American.wav">Adam</option>
+                        <option value="am_echo_male_American.wav">Echo</option>
+                        <option value="am_eric_male_American.wav">Eric</option>
+                        <option value="am_fenrir_male_American.wav">Fenrir</option>
+                        <option value="am_liam_male_American.wav">Liam</option>
+                        <option value="am_michael_male_American.wav">Michael</option>
+                        <option value="am_onyx_male_American.wav">Onyx</option>
+                        <option value="am_puck_male_American.wav">Puck</option>
+                        <option value="am_santa_male_American.wav">Santa</option>
+                    </optgroup>
+                    {/* British Female */}
+                    <optgroup label="🇬🇧 British Female">
+                        <option value="bf_alice_female_British.wav">Alice</option>
+                        <option value="bf_emma_female_British.wav">Emma</option>
+                        <option value="bf_isabella_female_British.wav">Isabella</option>
+                        <option value="bf_lily_female_British.wav">Lily</option>
+                    </optgroup>
+                    {/* British English — Male */}
+                    <optgroup label="🇬🇧 British Male">
+                        <option value="bm_daniel_male_British.wav">Daniel</option>
+                        <option value="bm_fable_male_British.wav">Fable</option>
+                        <option value="bm_george_male_British.wav">George</option>
+                        <option value="bm_lewis_male_British.wav">Lewis</option>
+                    </optgroup>
+                </select>
+                <div className="w-4"></div> {/* Spacer */}
+                <select 
+                    className="flex-1 px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    onChange={(e) => {
+                        const voiceId = e.target.value;
+                        const audioPlayer = document.getElementById('voice-preview-player') as HTMLAudioElement;
+                        if (audioPlayer && voiceId) {
+                            audioPlayer.src = `/audio/typecast/${voiceId}.wav`;
+                            audioPlayer.play().catch(() => {});
+                        }
+                    }}
+                >
+                    <option value="">Select a Typecast voice...</option>
+                    <optgroup label="Popular Voices">
+                        <option value="tc_6791c4a4c79515dea68b4a75">Logan (Teen/Conv)</option>
+                        <option value="tc_62a8975e695ad26f7fb514d1">Olivia (Young/Warm)</option>
+                        <option value="tc_67d237aac9ac563922580832">Sylvia (Mid/Mature)</option>
+                        <option value="tc_63049449e7dfae64b10c6cb9">Agatha (Elder/Story)</option>
+                        <option value="tc_6347828cd3835443f0fcd572">Tina (Teen/Energy)</option>
+                        <option value="tc_660e5c11eef728e75f95f520">Chester (Young/Casual)</option>
+                        <option value="tc_68f9c6a72f0f04a417bb136f">Moonjung (Young/Soft)</option>
+                        <option value="tc_68d4b115f0486108a7eefb37">Kangil (Young/Friendly)</option>
+                        <option value="tc_68785db8ba9cd7503f27d921">Gowoon (Young/Bright)</option>
+                        <option value="tc_689450bdcce4027c2f06eee8">Alena (Young/Pro)</option>
+                        <option value="tc_686dc43ebd6351e06ee64d74">Wonwoo (Young/Calm)</option>
+                        <option value="tc_688185a9183d96f8ca52885e">Anja (Young/Narrator)</option>
+                        <option value="tc_686dc45bbd6351e06ee64daf">Elise (Mid/Elegant)</option>
+                        <option value="tc_68662745779b66ba84fc4d84">Seheon (Young/Dynamic)</option>
+                        <option value="tc_685cdfad4027aeec7d097a28">Cheolhoon (Mid/Deep)</option>
+                        <option value="tc_685ca2dcfa58f44bdbe60d65">Wade (Mid/Auth)</option>
+                        <option value="tc_68537c9420b646f2176890ba">Seojin (Young/Clear)</option>
+                        <option value="tc_684a5a7ba2ce934624b59c6e">Nia (Mid/Warm)</option>
+                        <option value="tc_6837b58f80ceeb17115bb771">Walter (Young/Friendly)</option>
+                        <option value="tc_684a7a1446e2a628b5b07230">Jaesun (Mid/Calm)</option>
+                    </optgroup>
+                </select>
+                <audio 
+                    id="voice-preview-player" 
+                    controls 
+                    className="w-full md:w-auto flex-1 h-12 rounded-xl"
+                />
+            </div>
         </div>
 
         {/* Preview Section */}
@@ -906,6 +1014,7 @@ const Home: NextPage = () => {
 
         <Spacing />
       </div>
+    </div>
     </div>
   );
 };
