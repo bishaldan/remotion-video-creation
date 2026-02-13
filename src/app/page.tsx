@@ -745,18 +745,62 @@ const Home: NextPage = () => {
                       }}
                   >
                       <option value="">Select a voice to preview...</option>
-                      {voiceProvider === "kokoro" ? (
-                           Object.entries(KOKORO_VOICES).map(([id, details]: [string, KokoroVoice]) => (
-                              <option key={id} value={id}>
-                                  {details.name} ({details.accent} {details.gender})
-                              </option>
-                          ))
-                      ) : (
-                          Object.entries(TYPECAST_VOICES).map(([id, details]: [string, TypecastVoice]) => (
-                              <option key={id} value={id}>
-                                  {details.name} ({details.description})
-                              </option>
-                          ))
+                     {voiceProvider === "kokoro" ? (
+   Object.entries(
+       Object.entries(KOKORO_VOICES).reduce((acc, [id, voice]) => {
+           const group = `${voice.accent} ${voice.gender.charAt(0).toUpperCase() + voice.gender.slice(1)}`;
+           if (!acc[group]) acc[group] = [];
+           acc[group].push({ id, ...voice });
+           return acc;
+       }, {} as Record<string, (KokoroVoice & { id: string })[]>)
+   ).map(([group, voices]) => (
+       <optgroup key={group} label={group} className="text-black bg-white font-bold">
+           {voices.map((voice) => (
+               <option key={voice.id} value={voice.id} className="font-normal">
+                   {voice.name}
+               </option>
+           ))}
+       </optgroup>
+   ))
+): (                                                   Object.entries(
+                               Object.entries(TYPECAST_VOICES).reduce((acc, [id, voice]) => {
+                                   // Group by Gender (Capitalized)
+                                   const group = voice.gender.charAt(0).toUpperCase() + voice.gender.slice(1);
+                                   if (!acc[group]) acc[group] = [];
+                                   acc[group].push({ id, ...voice });
+                                   
+                                   // Sort by Age: Child -> Teenager -> Young Adult -> Middle Aged -> Elder
+                                   acc[group].sort((a, b) => {
+                                       const ageOrder = ["Child", "Teenager", "Young Adult", "Middle Aged", "Elder"];
+                                       const ageA = a.description.split(',')[0].trim();
+                                       const ageB = b.description.split(',')[0].trim();
+                                       
+                                       const indexA = ageOrder.indexOf(ageA);
+                                       const indexB = ageOrder.indexOf(ageB);
+                                       
+                                       // If ages are different, sort by chronological age
+                                       if (indexA !== -1 && indexB !== -1) {
+                                           if (indexA !== indexB) return indexA - indexB;
+                                       }
+                                       
+                                       // If same age (or unknown), sort alphabetically by name
+                                       return a.name.localeCompare(b.name);
+                                   });
+                                   
+                                   return acc;
+                               }, {} as Record<string, (TypecastVoice & { id: string })[]>)
+                           )
+                           // Sort groups (Female first, then Male)
+                           .sort(([a], [b]) => a.localeCompare(b))
+                           .map(([group, voices]) => (
+                               <optgroup key={group} label={group} className="text-black bg-white font-bold">
+                                   {voices.map((voice) => (
+                                       <option key={voice.id} value={voice.id} className="font-normal">
+                                           {voice.name} ({voice.description})
+                                       </option>
+                                   ))}
+                               </optgroup>
+                           ))
                       )}
                   </select>
 
