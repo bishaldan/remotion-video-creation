@@ -55,6 +55,19 @@ out
 # Ignore everything inside public/audio
 public/audio/*
 
+# Allow sfx
+!public/audio/sfx/
+
+# Typecast: un-ignore folder, ignore content, re-allow default
+!public/audio/typecast/
+public/audio/typecast/*
+!public/audio/typecast/default/
+
+# Kokoro: un-ignore folder, ignore content, re-allow default
+!public/audio/kokoro/
+public/audio/kokoro/*
+!public/audio/kokoro/default/
+
 # Re-include the specific folders
 !public/audio/solar-system-quiz-enhanced-v4_quiz_2026-02-11/
 !public/audio/official-single-quiz-v5_singleQuiz_2026-02-11/

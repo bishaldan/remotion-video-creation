@@ -127,7 +127,6 @@ export const EduMain: React.FC<z.infer<typeof TimelineSchema>> = ({
     <AbsoluteFill style={{ backgroundColor: "#0f0f1a" }}>
       <TransitionSeries>
         {slides.map((slide, index) => {
-          console.log(`[Edu] Rendering slide ${index}:`, JSON.stringify(slide, null, 2));
           const durationInSeconds = slide.durationInSeconds || 5;
           const durationInFrames = Math.round(durationInSeconds * VIDEO_FPS);
           const addLightLeak = shouldHaveLightLeak(index) && index < slides.length - 1;

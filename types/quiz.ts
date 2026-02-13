@@ -11,6 +11,7 @@ export const QuizQuestionSchema = z.object({
   backgroundUrl: z.string().optional(),
   durationInSeconds: z.number().default(5),
   revealTimeSeconds: z.number().optional(),
+  startFromSeconds: z.number().optional(),
   narrationUrl: z.string().optional(),
 });
 
@@ -41,7 +42,7 @@ export const defaultDualQuizTimeline: QuizTimeline = {
       subtitle: "Test your knowledge!",
       author: "Remotion Quiz",
       durationInSeconds: 5,
-      narrationUrl: "/audio/solar-system-quiz-enhanced-v4_quiz_2026-02-11/slide-0.wav",
+      narrationUrl: "/audio/kokoro/2026-02-13/Bella/default-dual-quiz/slide-0.wav",
     },
     {
       type: "quiz",
@@ -50,8 +51,10 @@ export const defaultDualQuizTimeline: QuizTimeline = {
       correctIndex: 1,
       backgroundQuery: "Mars planet space",
       backgroundUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/OSIRIS_Mars_true_color.jpg/1920px-OSIRIS_Mars_true_color.jpg",
-      durationInSeconds: 13.5,
-      narrationUrl: "/audio/solar-system-quiz-enhanced-v4_quiz_2026-02-11/slide-1.wav",
+      durationInSeconds: 16.5,
+      revealTimeSeconds: 12.9,
+      startFromSeconds: 8.0,
+      narrationUrl: "/audio/kokoro/2026-02-13/Bella/default-dual-quiz/slide-1.wav",
     },
     {
       type: "quiz",
@@ -60,15 +63,17 @@ export const defaultDualQuizTimeline: QuizTimeline = {
       correctIndex: 1,
       backgroundQuery: "Jupiter planet space",
       backgroundUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Jupiter.jpg/1920px-Jupiter.jpg",
-      durationInSeconds: 13.5,
-      narrationUrl: "/audio/solar-system-quiz-enhanced-v4_quiz_2026-02-11/slide-2.wav",
+      durationInSeconds: 17.5,
+      revealTimeSeconds: 13.6,
+      startFromSeconds: 8.6,
+      narrationUrl: "/audio/kokoro/2026-02-13/Bella/default-dual-quiz/slide-2.wav",
     },
     {
       type: "outro",
       title: "Great Job!",
       callToAction: "Follow for more quizzes",
-      durationInSeconds: 7,
-      narrationUrl: "/audio/solar-system-quiz-enhanced-v4_quiz_2026-02-11/slide-3.wav",
+      durationInSeconds: 3,
+      narrationUrl: "/audio/kokoro/2026-02-13/Bella/default-dual-quiz/slide-3.wav",
     }
   ],
 };
@@ -91,6 +96,7 @@ export const SingleQuizQuestionSchema = z.object({
   backgroundColor: z.string().optional(),
   durationInSeconds: z.number().optional(),
   revealTimeSeconds: z.number().optional(),
+  startFromSeconds: z.number().optional(),
   narrationUrl: z.string().optional(),
 });
 
@@ -124,7 +130,7 @@ export const defaultSingleQuizTimeline: SingleQuizTimeline = {
       author: "QuizMaster",
       backgroundColor: "#1a1a2e",
       durationInSeconds: 5,
-      narrationUrl: "/audio/official-single-quiz-v5_singleQuiz_2026-02-11/slide-0.wav",
+      narrationUrl: "/audio/kokoro/2026-02-13/Bella/default-single-quiz/slide-0.wav",
     },
     {
       type: "singleQuiz",
@@ -134,8 +140,10 @@ export const defaultSingleQuizTimeline: SingleQuizTimeline = {
       imageQuery: "tooth enamel",
       imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Blausen_0863_ToothAnatomy_02.png/800px-Blausen_0863_ToothAnatomy_02.png",
       backgroundColor: SINGLE_QUIZ_COLORS[0],
-      durationInSeconds: 15.5,
-      narrationUrl: "/audio/official-single-quiz-v5_singleQuiz_2026-02-11/slide-1.wav",
+      durationInSeconds: 18.5,
+      revealTimeSeconds: 15.05,
+      startFromSeconds: 10.05,
+      narrationUrl: "/audio/kokoro/2026-02-13/Bella/default-single-quiz/slide-1.wav",
     },
     {
       type: "singleQuiz",
@@ -145,8 +153,10 @@ export const defaultSingleQuizTimeline: SingleQuizTimeline = {
       imageQuery: "Mercury planet",
       imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Mercury_in_color_-_Prockter07-edit1.jpg/800px-Mercury_in_color_-_Prockter07-edit1.jpg",
       backgroundColor: SINGLE_QUIZ_COLORS[1],
-      durationInSeconds: 14.5,
-      narrationUrl: "/audio/official-single-quiz-v5_singleQuiz_2026-02-11/slide-2.wav",
+      durationInSeconds: 17.5,
+      revealTimeSeconds: 13.75,
+      startFromSeconds: 8.75,
+      narrationUrl: "/audio/kokoro/2026-02-13/Bella/default-single-quiz/slide-2.wav",
     },
     {
       type: "outro",
@@ -154,7 +164,7 @@ export const defaultSingleQuizTimeline: SingleQuizTimeline = {
       callToAction: "How many did you get right? Share your score!",
       backgroundColor: "#1a1a2e",
       durationInSeconds: 5,
-      narrationUrl: "/audio/official-single-quiz-v5_singleQuiz_2026-02-11/slide-3.wav",
+      narrationUrl: "/audio/kokoro/2026-02-13/Bella/default-single-quiz/slide-3.wav",
     },
   ],
 };
