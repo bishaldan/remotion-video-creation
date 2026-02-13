@@ -46,12 +46,12 @@ function cleanTTSText(text: string): string {
 }
 
 /**
- * Builds a folder name from the prompt, mode, and current date.
+ * Builds a folder path: voiceType/currentDate/voiceName/topic
  */
-function buildFolderName(prompt: string, mode: string): string {
+function buildFolderName(prompt: string, voiceName: string): string {
   const sanitizedPrompt = sanitizeFolderName(prompt);
   const date = new Date().toISOString().split("T")[0];
-  return `${sanitizedPrompt}_${mode}_${date}`;
+  return `kokoro/${date}/${voiceName}/${sanitizedPrompt}`;
 }
 
 let tts: KokoroTTS | null = null;
@@ -257,10 +257,12 @@ export async function setNarrationUrls(
   timeline: any,
   prompt: string = "default",
   mode: string = "education",
-  options: KokoroOptions = {}
+  voiceId: string = "af_bella"
 ) {
-  const folderName = buildFolderName(prompt, mode);
-  console.log(`Generating Local Kokoro narration → /audio/${folderName}/`);
+  const voiceName = KOKORO_VOICES[voiceId]?.name || voiceId;
+  const folderName = buildFolderName(prompt, voiceName);
+  const options: KokoroOptions = { voice: voiceId };
+  console.log(`Generating Local Kokoro narration (voice: ${voiceName}) → /audio/${folderName}/`);
 
   for (let index = 0; index < timeline.slides.length; index++) {
     const slide = timeline.slides[index];
@@ -269,9 +271,6 @@ export async function setNarrationUrls(
       try {
         const result = await generateTTS(text, `slide-${index}`, folderName, options);
         slide.narrationUrl = result.url;
-
-        // Telemetry removed
-
 
         // For quiz slides: override duration with actual audio length + buffer
         const isQuiz = slide.type === "quiz" || slide.type === "singleQuiz";

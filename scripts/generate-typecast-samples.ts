@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import "dotenv/config";
 import fs from "fs";
 import path from "path";
-import { generateTTS, TYPECAST_VOICES } from "../src/lib/typecastAi-tts";
+import { generateTTS, TYPECAST_VOICES } from "../src/lib/tts/typecastAi-tts";
 
 // Load .env.local explicitly
 dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });

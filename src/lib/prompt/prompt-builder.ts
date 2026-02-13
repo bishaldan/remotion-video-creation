@@ -9,7 +9,7 @@
  */
 
 import { NextRequest } from "next/server";
-import { extractPDFContent } from "./pdf-extractor";
+import { extractPDFContent } from "../pdf-extractor";
 
 export interface PromptBuilderInput {
   pdfText?: string;
@@ -89,6 +89,8 @@ export interface PromptResult {
   prompt: string;
   mode: "normal" | "quiz" | "singleQuiz";
   orientation: "landscape" | "portrait";
+  voiceType: "kokoro" | "typecast";
+  voiceId: string;
 }
 
 export const getPrompt = async (request: NextRequest, isEdit: boolean = false): Promise<PromptResult> => {
@@ -102,6 +104,8 @@ export const getPrompt = async (request: NextRequest, isEdit: boolean = false): 
     // Defaults
     let mode: "normal" | "quiz" | "singleQuiz" = "normal";
     let orientation: "landscape" | "portrait" = "landscape";
+    let voiceType: "kokoro" | "typecast" = "kokoro";
+    let voiceId = "af_bella";
 
     if(contentType.includes("multipart/form-data")){
       const formData = await request.formData();
@@ -109,10 +113,16 @@ export const getPrompt = async (request: NextRequest, isEdit: boolean = false): 
       const userPrompt = formData.get("prompt") as string | null;
       const modeParam = formData.get("mode") as string | null;
       const orientationParam = formData.get("orientation") as string | null;
+      const voiceTypeParam = formData.get("voiceType") as string | null;
+      const voiceIdParam = formData.get("voiceId") as string | null;
 
       if (modeParam === "quiz") mode = "quiz";
       if (modeParam === "singleQuiz") mode = "singleQuiz";
       if (orientationParam === "portrait") orientation = "portrait";
+      
+      // Voice params
+      if (voiceTypeParam === "typecast") voiceType = "typecast";
+      if (voiceIdParam) voiceId = voiceIdParam;
       
       // Validate that either PDF or prompt is provided (or just timeline for edit?)
       if (!pdfFile && !userPrompt) {
@@ -162,7 +172,7 @@ export const getPrompt = async (request: NextRequest, isEdit: boolean = false): 
             fullInstruction += `\n\nReference Document Context:\n${pdfText}`;
         }
         prompt = buildEditPrompt(timeline, fullInstruction);
-        return { prompt, mode, orientation };
+        return { prompt, mode, orientation, voiceType, voiceId };
       }
       
       // Build prompt using the prompt builder utility
@@ -177,6 +187,8 @@ export const getPrompt = async (request: NextRequest, isEdit: boolean = false): 
         prompt = `Create a quiz video about: ${userPrompt || (pdfMetadata ? pdfMetadata.title : "the content")}. ${prompt}`;
       }
 
+      return { prompt, mode, orientation, voiceType, voiceId };
+
     } else {
       // Handle JSON request
       const body = await request.json();
@@ -184,6 +196,10 @@ export const getPrompt = async (request: NextRequest, isEdit: boolean = false): 
       if (body.mode === "quiz") mode = "quiz";
       if (body.mode === "singleQuiz") mode = "singleQuiz";
       if (body.orientation === "portrait") orientation = "portrait";
+
+      // Voice params
+      if (body.voiceType === "typecast") voiceType = "typecast";
+      if (body.voiceId) voiceId = body.voiceId;
 
       if (isEdit) {
          const { timeline, editPrompt } = body;
@@ -196,7 +212,7 @@ export const getPrompt = async (request: NextRequest, isEdit: boolean = false): 
          if (timeline.orientation) orientation = timeline.orientation;
 
          prompt = buildEditPrompt(timeline, editPrompt);
-         return { prompt, mode, orientation };
+         return { prompt, mode, orientation, voiceType, voiceId };
       }
 
       const userPrompt = body.prompt;
@@ -215,5 +231,5 @@ export const getPrompt = async (request: NextRequest, isEdit: boolean = false): 
       }
     }
       
-    return { prompt, mode, orientation };
+    return { prompt, mode, orientation, voiceType, voiceId };
 }

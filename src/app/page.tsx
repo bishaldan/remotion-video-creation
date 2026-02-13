@@ -35,7 +35,7 @@ import {
 } from "../../types/shared";
 import { LocalRenderControls } from "../components/LocalRenderControls";
 import { Spacing } from "../components/Spacing";
-import { KOKORO_VOICES, KokoroVoice, TYPECAST_VOICES, TypecastVoice } from "../lib/voice-constants";
+import { KOKORO_VOICES, KokoroVoice, TYPECAST_VOICES, TypecastVoice } from "../lib/tts/voice-constants";
 import { calculateQuizDuration, DualQuizMain } from "../remotion/compositions/DualQuiz/Main";
 import { calculateTimelineDuration, EduMain } from "../remotion/compositions/Edu/Main";
 import { calculateSingleQuizDuration, SingleQuizMain } from "../remotion/compositions/SingleQuiz/Main";
@@ -215,6 +215,8 @@ const Home: NextPage = () => {
           
           const effectiveMode = mode === "quiz" && quizFormat === "single" ? "singleQuiz" : mode;
           formData.append("mode", effectiveMode);
+          formData.append("voiceType", voiceProvider);
+          formData.append("voiceId", previewVoiceId || (voiceProvider === "kokoro" ? "af_bella" : "tc_6791c4a4c79515dea68b4a75"));
 
           if (mode === "quiz" && quizFormat === "dual") {
               formData.append("orientation", orientation);
@@ -258,7 +260,9 @@ const Home: NextPage = () => {
             body: JSON.stringify({ 
                 prompt,
                 mode: effectiveMode,
-                orientation: (mode === "quiz" && quizFormat === "dual") ? orientation : undefined
+                orientation: (mode === "quiz" && quizFormat === "dual") ? orientation : undefined,
+                voiceType: voiceProvider,
+                voiceId: previewVoiceId || (voiceProvider === "kokoro" ? "af_bella" : "tc_6791c4a4c79515dea68b4a75")
             }),
           });
         } catch {
@@ -355,6 +359,8 @@ const Home: NextPage = () => {
       const effectiveMode = mode === "quiz" && quizFormat === "single" ? "singleQuiz" : mode;
       formData.append("mode", effectiveMode);
       formData.append("orientation", orientation);
+      formData.append("voiceType", voiceProvider);
+      formData.append("voiceId", previewVoiceId || (voiceProvider === "kokoro" ? "af_bella" : "tc_6791c4a4c79515dea68b4a75"));
       
       if (pdfFile) {
         formData.append("pdf", pdfFile);
@@ -681,6 +687,87 @@ const Home: NextPage = () => {
             }
             className="w-full h-32 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none disabled:opacity-50 disabled:cursor-not-allowed"
           />
+
+          {/* Voice Selection (inline in prompt area) */}
+          <div className="mt-6">
+              <label className="block text-sm font-medium text-slate-300 mb-2">Voice Selection</label>
+              <div className="flex flex-col gap-3">
+                  {/* Provider Tabs */}
+                  <div className="flex bg-black/20 p-1 rounded-xl w-max">
+                      <button
+                          onClick={() => {
+                              setVoiceProvider("kokoro");
+                              setPreviewVoiceId("");
+                          }}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                              voiceProvider === "kokoro"
+                              ? "bg-purple-600 text-white shadow-lg"
+                              : "text-slate-400 hover:text-white"
+                          }`}
+                      >
+                          Kokoro (Local / Free)
+                      </button>
+                      <button
+                          onClick={() => {
+                              setVoiceProvider("typecast");
+                              setPreviewVoiceId("");
+                          }}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                              voiceProvider === "typecast"
+                              ? "bg-purple-600 text-white shadow-lg"
+                              : "text-slate-400 hover:text-white"
+                          }`}
+                      >
+                          Typecast AI (Premium)
+                      </button>
+                  </div>
+
+                  {/* Voice Dropdown */}
+                  <select 
+                      className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      value={previewVoiceId}
+                      onChange={(e) => {
+                          const voiceId = e.target.value;
+                          setPreviewVoiceId(voiceId);
+                          const audioPlayer = document.getElementById('voice-preview-player') as HTMLAudioElement;
+                          if (audioPlayer && voiceId) {
+                              if (voiceProvider === "kokoro") {
+                                  const details = KOKORO_VOICES[voiceId];
+                                  if(details) {
+                                      audioPlayer.src = `/audio/kokoro/default/${voiceId}_${details.gender}_${details.accent.toLowerCase()}.wav`; 
+                                      audioPlayer.play().catch(() => {});
+                                  }
+                              } else {
+                                  audioPlayer.src = `/audio/typecast/default/${voiceId}.wav`;
+                                  audioPlayer.play().catch(() => {});
+                              }
+                          }
+                      }}
+                  >
+                      <option value="">Select a voice to preview...</option>
+                      {voiceProvider === "kokoro" ? (
+                           Object.entries(KOKORO_VOICES).map(([id, details]: [string, KokoroVoice]) => (
+                              <option key={id} value={id}>
+                                  {details.name} ({details.accent} {details.gender})
+                              </option>
+                          ))
+                      ) : (
+                          Object.entries(TYPECAST_VOICES).map(([id, details]: [string, TypecastVoice]) => (
+                              <option key={id} value={id}>
+                                  {details.name} ({details.description})
+                              </option>
+                          ))
+                      )}
+                  </select>
+
+                  {/* Hidden audio player — plays preview but is invisible */}
+                  <audio 
+                      id="voice-preview-player" 
+                      className="sr-only"
+                  />
+              </div>
+          </div>
+
           <div className="flex items-center justify-between mt-4">
             {error && <p className="text-red-400 text-sm">{error}</p>}
             <button
@@ -719,91 +806,7 @@ const Home: NextPage = () => {
           </div>
 
 
-        {/* Voice Preview Section */}
-        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-8">
-            <h2 className="text-xl font-semibold text-white mb-4">Voice Selection</h2>
-            
-            <div className="flex flex-col gap-4">
-                {/* Provider Selection Tabs */}
-                <div className="flex bg-black/20 p-1 rounded-xl w-max self-start">
-                    <button
-                        onClick={() => {
-                            setVoiceProvider("kokoro");
-                            setPreviewVoiceId("");
-                        }}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                            voiceProvider === "kokoro"
-                            ? "bg-purple-600 text-white shadow-lg"
-                            : "text-slate-400 hover:text-white"
-                        }`}
-                    >
-                        Kokoro (Local / Free)
-                    </button>
-                    <button
-                        onClick={() => {
-                            setVoiceProvider("typecast");
-                            setPreviewVoiceId("");
-                        }}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                            voiceProvider === "typecast"
-                            ? "bg-purple-600 text-white shadow-lg"
-                            : "text-slate-400 hover:text-white"
-                        }`}
-                    >
-                        Typecast AI (Premium)
-                    </button>
-                </div>
 
-                <div className="flex flex-col md:flex-row gap-4 items-center">
-                    <select 
-                        className="flex-1 px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        value={previewVoiceId}
-                        onChange={(e) => {
-                            const voiceId = e.target.value;
-                            setPreviewVoiceId(voiceId);
-                            const audioPlayer = document.getElementById('voice-preview-player') as HTMLAudioElement;
-                            if (audioPlayer && voiceId) {
-                                if (voiceProvider === "kokoro") {
-                                    // Kokoro filename logic: [id]_[gender]_[accent].wav (or just match generated script)
-                                    // The script generates: `${voiceId}_${details.gender}_${details.accent}.wav`
-                                    const details = KOKORO_VOICES[voiceId];
-                                    if(details) {
-                                         // Match the generate-kokoro-samples.ts logic
-                                        audioPlayer.src = `/audio/kokoro/${voiceId}_${details.gender}_${details.accent.toLowerCase()}.wav`; 
-                                        audioPlayer.play().catch(() => {});
-                                    }
-                                } else {
-                                    // Typecast: [id].wav
-                                    audioPlayer.src = `/audio/typecast/${voiceId}.wav`;
-                                    audioPlayer.play().catch(() => {});
-                                }
-                            }
-                        }}
-                    >
-                        <option value="">Select a voice to preview...</option>
-                        {voiceProvider === "kokoro" ? (
-                             Object.entries(KOKORO_VOICES).map(([id, details]: [string, KokoroVoice]) => (
-                                <option key={id} value={id}>
-                                    {details.name} ({details.accent} {details.gender})
-                                </option>
-                            ))
-                        ) : (
-                            Object.entries(TYPECAST_VOICES).map(([id, details]: [string, TypecastVoice]) => (
-                                <option key={id} value={id}>
-                                    {details.name} ({details.description})
-                                </option>
-                            ))
-                        )}
-                    </select>
-
-                    <audio 
-                        id="voice-preview-player" 
-                        controls 
-                        className="w-full md:w-auto flex-1 h-12 rounded-xl bg-white/5"
-                    />
-                </div>
-            </div>
-        </div>
 
         {/* Preview Section */}
         <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-8">

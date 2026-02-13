@@ -1,7 +1,7 @@
 import fs from "fs";
 import { KokoroTTS } from "kokoro-js";
 import path from "path";
-import { KOKORO_VOICES } from "../src/lib/kokoro-tts";
+import { KOKORO_VOICES } from "../src/lib/tts/kokoro-tts";
 
 const MODEL_ID = "onnx-community/Kokoro-82M-v1.0-ONNX";
 

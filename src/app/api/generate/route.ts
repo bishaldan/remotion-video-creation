@@ -2,14 +2,15 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest, NextResponse } from "next/server";
 import { Timeline } from "../../../../types/edu";
 import { QuizTimeline, SingleQuizTimeline } from "../../../../types/quiz";
-import { setNarrationUrls } from "../../../lib/kokoro-tts";
-import { getPrompt } from "../../../lib/prompt-builder";
+import { getPrompt } from "../../../lib/prompt/prompt-builder";
 import {
-    EDUCATION_SYSTEM_PROMPT,
-    QUIZ_SYSTEM_PROMPT,
-    SINGLE_QUIZ_SYSTEM_PROMPT
-} from "../../../lib/prompts";
-import { setImagesUrl } from "../../../lib/unsplash";
+  EDUCATION_SYSTEM_PROMPT,
+  QUIZ_SYSTEM_PROMPT,
+  SINGLE_QUIZ_SYSTEM_PROMPT
+} from "../../../lib/prompt/prompts";
+import { setNarrationUrls as setKokoroNarrationUrls } from "../../../lib/tts/kokoro-tts";
+import { setNarrationUrls as setTypecastNarrationUrls } from "../../../lib/tts/typecastAi-tts";
+import { setImagesUrl } from "../../../lib/image/unsplash";
 import { cleanJsonResponse } from "../../../lib/utils";
 
 const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
@@ -17,7 +18,7 @@ const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 // POST API: GENERATE NEW CONTENT
 export async function POST(request: NextRequest) {
   try {
-    const { prompt, mode, orientation } = await getPrompt(request);
+    const { prompt, mode, orientation, voiceType, voiceId } = await getPrompt(request);
     if (!apiKey) {
       return NextResponse.json(
         { error: " API key is not configured" },
@@ -61,7 +62,11 @@ export async function POST(request: NextRequest) {
 
       
       await setImagesUrl(timeline, orientation);
-      await setNarrationUrls(timeline, prompt, mode || "education");
+      if (voiceType === "typecast") {
+        await setTypecastNarrationUrls(timeline, prompt, mode || "education", voiceId);
+      } else {
+        await setKokoroNarrationUrls(timeline, prompt, mode || "education", voiceId);
+      }
 
     } catch (parseError) {
       console.error("JSON Parse Error:", parseError, "Text:", text);
@@ -84,7 +89,7 @@ export async function POST(request: NextRequest) {
 // PATCH API: EDIT TIMELINE
 export async function PATCH(request: NextRequest) {
   try {
-    const { prompt, mode, orientation } = await getPrompt(request, true); // THE ONLY POINT THAT CHANGES BETWEEN POST AND PATCH IS THE GET PROMPT FUNCTION
+    const { prompt, mode, orientation, voiceType, voiceId } = await getPrompt(request, true); // THE ONLY POINT THAT CHANGES BETWEEN POST AND PATCH IS THE GET PROMPT FUNCTION
 
     if (!apiKey) {
       return NextResponse.json(
@@ -127,7 +132,11 @@ export async function PATCH(request: NextRequest) {
       console.log('Edited Timeline:', JSON.stringify(newTimeline, null, 2));
 
       await setImagesUrl(newTimeline, orientation);
-      await setNarrationUrls(newTimeline, prompt, mode || "education");
+      if (voiceType === "typecast") {
+        await setTypecastNarrationUrls(newTimeline, prompt, mode || "education", voiceId);
+      } else {
+        await setKokoroNarrationUrls(newTimeline, prompt, mode || "education", voiceId);
+      }
 
       return NextResponse.json({ timeline: newTimeline });
 

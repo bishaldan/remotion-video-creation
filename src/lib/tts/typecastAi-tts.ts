@@ -52,10 +52,10 @@ function cleanTTSText(text: string): string {
     .trim();
 }
 
-function buildFolderName(prompt: string, mode: string): string {
+function buildFolderName(prompt: string, voiceName: string): string {
   const sanitizedPrompt = sanitizeFolderName(prompt);
   const date = new Date().toISOString().split("T")[0];
-  return `${sanitizedPrompt}_${mode}_${date}`;
+  return `typecast/${date}/${voiceName}/${sanitizedPrompt}`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -383,10 +383,12 @@ export async function setNarrationUrls(
   timeline: any,
   prompt: string = "default",
   mode: string = "education",
-  options: TypecastOptions = {}
+  voiceId: string = "tc_6791c4a4c79515dea68b4a75"
 ) {
-  const folderName = buildFolderName(prompt, mode);
-  console.log(`Generating Typecast AI narration → /audio/${folderName}/`);
+  const voiceName = TYPECAST_VOICES[voiceId]?.name || voiceId;
+  const folderName = buildFolderName(prompt, voiceName);
+  const options: TypecastOptions = { voiceId };
+  console.log(`Generating Typecast AI narration (voice: ${voiceName}) → /audio/${folderName}/`);
 
   for (let index = 0; index < timeline.slides.length; index++) {
     const slide = timeline.slides[index];

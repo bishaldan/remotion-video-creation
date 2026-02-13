@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import path from "path";
-import { fetchAvailableVoices } from "../src/lib/typecastAi-tts";
+import { fetchAvailableVoices } from "../src/lib/tts/typecastAi-tts";
 
 // Load .env.local explicitly
 dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
