@@ -87,7 +87,6 @@
     COPY --from=builder --chown=nextjs:nodejs /app/remotion.config.ts  ./remotion.config.ts
     COPY --from=builder --chown=nextjs:nodejs /app/styles              ./styles
     COPY --from=builder --chown=nextjs:nodejs /app/scripts             ./scripts
-    COPY --from=builder --chown=nextjs:nodejs /app/.agents             ./.agents
     
     # Writable out directory for renders
     RUN mkdir -p /app/out && chown nextjs:nodejs /app/out
