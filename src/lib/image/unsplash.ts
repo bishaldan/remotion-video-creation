@@ -321,6 +321,9 @@ export async function setImagesUrl(
   timeline: Timeline | DualQuizTimeline | SingleQuizTimeline | KidsTimeline,
   orientation: "landscape" | "portrait" | "squarish" = "landscape"
 ) {
+  // User Request: Prioritize 'portrait' orientation for DualQuiz mode regardless of video orientation
+  const isDualQuiz = (timeline as any).mode === "dualQuiz" || timeline.slides.some((s: any) => s.type === "dualQuiz");
+  const effectiveOrientation = isDualQuiz ? "portrait" : orientation;
   const imageQueries: string[] = [];
   const imageSlides: number[] = [];
 
@@ -341,16 +344,16 @@ export async function setImagesUrl(
       kidsContentSlides.push({ slideIndex: index, queries: slide.backgroundImageQueries });
       // Add all queries to the batch with kid-friendly modifiers
       for (const q of slide.backgroundImageQueries) {
-        const modifiedQuery = `${q} cartoon`;
+        const modifiedQuery = q;
         imageQueries.push(modifiedQuery);
       }
     }
   });
 
   if (imageQueries.length > 0) {
-    console.log("Fetching images for:", imageQueries);
+    console.log(`Fetching images for ${isDualQuiz ? "DualQuiz (forced portrait)" : "timeline"}...`);
 
-    const imagesMap = await batchSearchImages(imageQueries, orientation);
+    const imagesMap = await batchSearchImages(imageQueries, effectiveOrientation);
 
     // Handle standard slides
     let queryIndex = 0;
@@ -374,7 +377,7 @@ export async function setImagesUrl(
       const urls: string[] = [];
       for (const q of kidsSlide.queries) {
         // We must reconstruct the modified query to retrieve from the map
-        const modifiedQuery = `${q} cartoon`;
+        const modifiedQuery = q;
         const image = imagesMap.get(modifiedQuery);
         if (image) {
           urls.push(image.url);

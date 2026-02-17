@@ -426,6 +426,13 @@ export async function setNarrationUrls(
           slide.durationInSeconds = Math.ceil(result.durationSeconds * 2) / 2; // Round up to nearest 0.5s
           console.log(`    → Kids Slide ${index}: duration=${slide.durationInSeconds}s (from audio)`);
         }
+
+        // For other narrative slides (intro, outro, etc.): sync duration with audio
+        if (["intro", "outro", "text", "bullets", "diagram", "threeD", "image", "lottie"].includes(slide.type)) {
+          const newDuration = Math.ceil((result.durationSeconds + 1.5) * 2) / 2;
+          slide.durationInSeconds = newDuration;
+          console.log(`    → ${slide.type} Slide ${index}: duration updated to ${slide.durationInSeconds}s (from audio + 1.5s buffer)`);
+        }
       } catch (error) {
         console.error(`Failed to generate TTS for slide ${index}:`, error);
       }

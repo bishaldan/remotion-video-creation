@@ -62,6 +62,11 @@ export const RemotionRoot: React.FC = () => {
         height={EDU_KIDS_HEIGHT}
         schema={KidsTimelineSchema}
         defaultProps={defaultKidsTimeline}
+        calculateMetadata={({ props }) => {
+          return {
+            durationInFrames: calculateKidsDuration(props.slides),
+          };
+        }}
       />
       <Composition
         id={QUIZ_COMP_LANDSCAPE}

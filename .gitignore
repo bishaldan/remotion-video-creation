@@ -59,11 +59,10 @@ public/audio/*
 !public/audio/sfx/
 
 # Typecast: un-ignore folder, ignore content, re-allow default
-!public/audio/typecast/
 !public/audio/typecast/default/
 
 # Kokoro: un-ignore folder, ignore content, re-allow default
-!public/audio/kokoro/
+!public/audio/kokoro/2026-02-17/Santa/default-kids-content/
 !public/audio/kokoro/default/
 
 # Re-include the specific folders

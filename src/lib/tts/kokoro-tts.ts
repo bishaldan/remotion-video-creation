@@ -80,11 +80,6 @@ function getAudioDuration(audioData: Float32Array, sampleRate: number): number {
   return audioData.length / sampleRate;
 }
 
-
-// ─────────────────────────────────────────────────────────────────────────────
-// TTS GENERATION
-// ─────────────────────────────────────────────────────────────────────────────
-
 /**
  * Generates an audio file from text using local Kokoro TTS.
  * Returns the public URL path AND the audio duration in seconds.
@@ -291,8 +286,9 @@ export async function setNarrationUrls(
 ) {
   const voiceName = KOKORO_VOICES[voiceId]?.name || voiceId;
   const folderName = buildFolderName(prompt, voiceName);
-  const options: KokoroOptions = { voice: voiceId };
-  console.log(`Generating Local Kokoro narration (voice: ${voiceName}) → /audio/${folderName}/`);
+  // Default speed set to 1.1 for slightly faster, more engaging narration (viral style)
+  const options: KokoroOptions = { voice: voiceId, speed: 0.9 };
+  console.log(`Generating Local Kokoro narration (voice: ${voiceName}, speed: ${options.speed}) → /audio/${folderName}/`);
 
   for (let index = 0; index < timeline.slides.length; index++) {
     const slide = timeline.slides[index];
@@ -323,7 +319,7 @@ export async function setNarrationUrls(
         // For other narrative slides (intro, outro, etc.): sync duration with audio
         if (["intro", "outro", "text", "bullets", "diagram", "threeD", "image", "lottie"].includes(slide.type)) {
           // Add a small buffer (0.5s) so it doesn't feel abrupt
-          const newDuration = Math.ceil((result.durationSeconds + 0.5) * 2) / 2;
+          const newDuration = Math.ceil((result.durationSeconds + 1.5) * 2) / 2;
           slide.durationInSeconds = newDuration;
           console.log(`    → ${slide.type} Slide ${index}: duration updated to ${slide.durationInSeconds}s (from audio + 0.5s buffer)`);
         }
