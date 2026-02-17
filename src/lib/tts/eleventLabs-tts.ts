@@ -108,7 +108,7 @@ function getNarrationText(slide: any): string {
       return slide.caption || slide.imageQuery || "Look at this image.";
     case "lottie":
       return `${slide.title ? slide.title + ". " : ""}${slide.text}`;
-    case "quiz":
+    case "dualQuiz":
     case "singleQuiz":
       return `${slide.question}. Is it: ${slide.options.join(", or ")}?`;
     case "outro":

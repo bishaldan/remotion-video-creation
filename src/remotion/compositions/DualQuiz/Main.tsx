@@ -33,7 +33,7 @@ export const DualQuizMain: React.FC<z.infer<typeof DualQuizTimelineSchema>> = ({
             narrationUrl={slide.narrationUrl}
           />
         );
-      case "quiz":
+      case "dualQuiz":
         return (
           <DualQuizSlide
             question={slide.question}
@@ -59,9 +59,9 @@ export const DualQuizMain: React.FC<z.infer<typeof DualQuizTimelineSchema>> = ({
       default:
         console.warn("Unknown slide type:", slide);
         return (
-            <AbsoluteFill style={{backgroundColor: 'red', justifyContent: 'center', alignItems: 'center'}}>
-                <h1 style={{color: 'white'}}>Unknown Slide Type: {slide.type}</h1>
-            </AbsoluteFill>
+          <AbsoluteFill style={{ backgroundColor: 'red', justifyContent: 'center', alignItems: 'center' }}>
+            <h1 style={{ color: 'white' }}>Unknown Slide Type: {slide.type}</h1>
+          </AbsoluteFill>
         );
     }
   };
@@ -85,7 +85,7 @@ export const DualQuizMain: React.FC<z.infer<typeof DualQuizTimelineSchema>> = ({
               <TransitionSeries.Sequence durationInFrames={durationInFrames}>
                 {renderSlide(slide)}
               </TransitionSeries.Sequence>
-              
+
               {/* Add fade transitions between slides */}
               {index < slides.length - 1 && (
                 <TransitionSeries.Transition

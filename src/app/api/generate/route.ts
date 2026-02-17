@@ -1,10 +1,12 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest, NextResponse } from "next/server";
 import { Timeline } from "../../../../types/edu";
-import { QuizTimeline, SingleQuizTimeline } from "../../../../types/quiz";
+import { KidsTimeline } from "../../../../types/edu-kids";
+import { DualQuizTimeline, SingleQuizTimeline } from "../../../../types/quiz";
 import { getPrompt } from "../../../lib/prompt/prompt-builder";
 import {
   EDUCATION_SYSTEM_PROMPT,
+  EDUCATION_KIDS_SYSTEM_PROMPT,
   QUIZ_SYSTEM_PROMPT,
   SINGLE_QUIZ_SYSTEM_PROMPT
 } from "../../../lib/prompt/prompts";
@@ -31,7 +33,8 @@ export async function POST(request: NextRequest) {
 
     // Select System Prompt
     let systemPrompt = EDUCATION_SYSTEM_PROMPT;
-    if (mode === "quiz") systemPrompt = QUIZ_SYSTEM_PROMPT;
+    if (mode === "educationKids") systemPrompt = EDUCATION_KIDS_SYSTEM_PROMPT;
+    if (mode === "dualQuiz") systemPrompt = QUIZ_SYSTEM_PROMPT;
     if (mode === "singleQuiz") systemPrompt = SINGLE_QUIZ_SYSTEM_PROMPT;
 
     const result = await model.generateContent([
@@ -43,24 +46,26 @@ export async function POST(request: NextRequest) {
     const text = response.text();
     const cleanedText = cleanJsonResponse(text);
 
-    let timeline: Timeline | QuizTimeline | SingleQuizTimeline;
+    let timeline: Timeline | DualQuizTimeline | SingleQuizTimeline | KidsTimeline;
     try {
       timeline = JSON.parse(cleanedText);
 
-      
+
       // Ensure mode/orientation on root object
-      if (mode === "quiz") {
-          (timeline as any).mode = "quiz";
-          (timeline as any).orientation = orientation;
+      if (mode === "educationKids") {
+        (timeline as any).mode = "educationKids";
+      }
+      if (mode === "dualQuiz") {
+        (timeline as any).mode = "dualQuiz";
+        (timeline as any).orientation = orientation;
       }
       if (mode === "singleQuiz") {
-          (timeline as any).mode = "singleQuiz";
-          // Single quiz is always landscape effectively, but we can store it if needed
+        (timeline as any).mode = "singleQuiz";
       }
-      
 
 
-      
+
+
       await setImagesUrl(timeline, orientation);
       if (voiceType === "typecast") {
         await setTypecastNarrationUrls(timeline, prompt, mode || "education", voiceId);
@@ -103,12 +108,13 @@ export async function PATCH(request: NextRequest) {
 
     // Select System Prompt
     let systemPrompt = EDUCATION_SYSTEM_PROMPT;
-    if (mode === "quiz") systemPrompt = QUIZ_SYSTEM_PROMPT;
+    if (mode === "educationKids") systemPrompt = EDUCATION_KIDS_SYSTEM_PROMPT;
+    if (mode === "dualQuiz") systemPrompt = QUIZ_SYSTEM_PROMPT;
     if (mode === "singleQuiz") systemPrompt = SINGLE_QUIZ_SYSTEM_PROMPT;
 
     // Reuse SYSTEM_PROMPT to ensure valid JSON output
     const result = await model.generateContent([
-      systemPrompt, 
+      systemPrompt,
       prompt
     ]);
 
@@ -116,19 +122,22 @@ export async function PATCH(request: NextRequest) {
     const text = response.text();
     const cleanedText = cleanJsonResponse(text);
 
-    let newTimeline: Timeline | QuizTimeline | SingleQuizTimeline;
+    let newTimeline: Timeline | DualQuizTimeline | SingleQuizTimeline | KidsTimeline;
     try {
       newTimeline = JSON.parse(cleanedText);
-      
+
       // Ensure specific fields are preserved/set
-      if (mode === "quiz") {
-         (newTimeline as any).mode = "quiz";
-         (newTimeline as any).orientation = orientation;
+      if (mode === "educationKids") {
+        (newTimeline as any).mode = "educationKids";
+      }
+      if (mode === "dualQuiz") {
+        (newTimeline as any).mode = "dualQuiz";
+        (newTimeline as any).orientation = orientation;
       }
       if (mode === "singleQuiz") {
-         (newTimeline as any).mode = "singleQuiz";
+        (newTimeline as any).mode = "singleQuiz";
       }
-      
+
 
 
       await setImagesUrl(newTimeline, orientation);
@@ -156,4 +165,3 @@ export async function PATCH(request: NextRequest) {
     );
   }
 }
-

@@ -13,6 +13,7 @@
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "@remotion/bundler": "4.0.421",
+    "@remotion/captions": "^4.0.423",
     "@remotion/cli": "4.0.421",
     "@remotion/google-fonts": "4.0.421",
     "@remotion/lambda": "4.0.421",
@@ -28,6 +29,7 @@
     "@tailwindcss/postcss": "4.1.1",
     "@types/canvas-confetti": "^1.9.0",
     "@types/three": "^0.182.0",
+    "@xenova/transformers": "^2.17.2",
     "autoprefixer": "10.4.20",
     "canvas-confetti": "^1.9.4",
     "clsx": "2.1.1",
@@ -47,6 +49,7 @@
     "tailwindcss": "4.0.3",
     "three": "^0.182.0",
     "unpdf": "^1.4.0",
+    "wavefile": "^11.0.0",
     "zod": "3.22.3"
   },
   "devDependencies": {

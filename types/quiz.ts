@@ -2,8 +2,8 @@ import { z } from "zod";
 import { IntroSlideSchema, OutroSlideSchema } from "./shared";
 
 // Dual Quiz Mode
-export const QuizQuestionSchema = z.object({
-  type: z.literal("quiz"),
+export const DualQuizQuestionSchema = z.object({
+  type: z.literal("dualQuiz"),
   question: z.string(),
   options: z.array(z.string()).min(2).max(4),
   correctIndex: z.number(),
@@ -17,22 +17,22 @@ export const QuizQuestionSchema = z.object({
 
 export const DualQuizTimelineSchema = z.object({
   title: z.string(),
-  mode: z.literal("quiz"),
+  mode: z.literal("dualQuiz"),
   orientation: z.enum(["landscape", "portrait"]),
   slides: z.array(z.discriminatedUnion("type", [
-    QuizQuestionSchema,
+    DualQuizQuestionSchema,
     IntroSlideSchema,
     OutroSlideSchema,
   ])),
   defaultSlideDuration: z.number().default(7),
 });
 
-export type QuizQuestion = z.infer<typeof QuizQuestionSchema>;
-export type QuizTimeline = z.infer<typeof DualQuizTimelineSchema>;
+export type DualQuizQuestion = z.infer<typeof DualQuizQuestionSchema>;
+export type DualQuizTimeline = z.infer<typeof DualQuizTimelineSchema>;
 
-export const defaultDualQuizTimeline: QuizTimeline = {
+export const defaultDualQuizTimeline: DualQuizTimeline = {
   title: "Solar System Quiz",
-  mode: "quiz",
+  mode: "dualQuiz",
   orientation: "landscape",
   defaultSlideDuration: 5,
   slides: [
@@ -45,7 +45,7 @@ export const defaultDualQuizTimeline: QuizTimeline = {
       narrationUrl: "/audio/kokoro/2026-02-13/Bella/default-dual-quiz/slide-0.wav",
     },
     {
-      type: "quiz",
+      type: "dualQuiz",
       question: "Which planet is known as the Red Planet?",
       options: ["Venus", "Mars", "Jupiter", "Saturn"],
       correctIndex: 1,
@@ -57,7 +57,7 @@ export const defaultDualQuizTimeline: QuizTimeline = {
       narrationUrl: "/audio/kokoro/2026-02-13/Bella/default-dual-quiz/slide-1.wav",
     },
     {
-      type: "quiz",
+      type: "dualQuiz",
       question: "What is the largest planet in our solar system?",
       options: ["Earth", "Jupiter", "Uranus", "Neptune"],
       correctIndex: 1,

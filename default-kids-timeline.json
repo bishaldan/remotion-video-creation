@@ -1,0 +1,57 @@
+{
+  "title": "Fun Facts About Animals",
+  "mode": "educationKids",
+  "defaultSlideDuration": 20,
+  "slides": [
+    {
+      "type": "intro",
+      "title": "Fun Facts About Animals! 🐾",
+      "subtitle": "Let's Learn Together!",
+      "author": "Kids Learning",
+      "backgroundColor": "linear-gradient(135deg, #ff6b6b 0%, #feca57 100%)",
+      "durationInSeconds": 5,
+      "narrationUrl": "/audio/kokoro/2026-02-17/Santa/default-kids-content/slide-0.wav"
+    },
+    {
+      "type": "kidsContent",
+      "lines": [
+        "Did you know?",
+        "Dolphins are super smart!",
+        "They talk to each other",
+        "using clicks and whistles.",
+        "Elephants never forget.",
+        "They have amazing memory!",
+        "A group of flamingos",
+        "is called a flamboyance!",
+        "Octopuses have three hearts.",
+        "How cool is that?"
+      ],
+      "backgroundImageQueries": [
+        "cute dolphin",
+        "baby elephant",
+        "pink flamingo",
+        "colorful octopus",
+        "happy puppy",
+        "tropical fish",
+        "butterfly garden",
+        "rainbow nature",
+        "cute panda"
+      ],
+      "backgroundImageUrls": [
+        "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Olifant_%284149771763%29.jpg/1920px-Olifant_%284149771763%29.jpg",
+        "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Tropical_fish.jpg/1920px-Tropical_fish.jpg",
+        "https://upload.wikimedia.org/wikipedia/commons/8/82/American_homes_and_gardens_%281908%29_%2818151902362%29.jpg"
+      ],
+      "durationInSeconds": 15.5,
+      "narrationUrl": "/audio/kokoro/2026-02-17/Santa/default-kids-content/slide-1.wav"
+    },
+    {
+      "type": "outro",
+      "title": "Great Job Learning! 🌟",
+      "callToAction": "Follow for more fun facts!",
+      "backgroundColor": "linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%)",
+      "durationInSeconds": 5,
+      "narrationUrl": "/audio/kokoro/2026-02-17/Santa/default-kids-content/slide-2.wav"
+    }
+  ]
+}

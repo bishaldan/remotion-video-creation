@@ -105,12 +105,12 @@ async function callTypecastAPI(
     text: cleanTTSText(text),
     model: model,
     language: "eng",
-    prompt: options.emotion === "smart" 
+    prompt: options.emotion === "smart"
       ? { emotion_type: "smart" }
-      : { 
-          emotion_type: "preset",
-          emotion_preset: options.emotion || "normal"
-        },
+      : {
+        emotion_type: "preset",
+        emotion_preset: options.emotion || "normal"
+      },
     output: {
       audio_format: "wav",
       audio_tempo: options.speed || 1.0,
@@ -181,7 +181,7 @@ export async function generateTTS(
   try {
     // Determine model if not provided
     if (!options.model && options.voiceId && TYPECAST_VOICES[options.voiceId]) {
-        options.model = TYPECAST_VOICES[options.voiceId].model;
+      options.model = TYPECAST_VOICES[options.voiceId].model;
     }
 
     if (typeof text === "object" && (text as any).parts) {
@@ -375,9 +375,12 @@ function getNarrationText(slide: any): string | { parts: { text: string; pauseAf
       return slide.caption || slide.imageQuery || "Look at this image.";
     case "lottie":
       return `${slide.title ? slide.title + ". " : ""}${slide.text}`;
-    case "quiz":
+    case "dualQuiz":
     case "singleQuiz":
       return formatQuizNarration(slide);
+    case "kidsContent":
+      // Join all lines into one continuous narration (no silence gaps)
+      return slide.lines.join(". ");
     case "outro":
       return `${slide.title || ""}. ${slide.callToAction || ""}`;
     default:
@@ -409,13 +412,19 @@ export async function setNarrationUrls(
         slide.narrationUrl = result.url;
 
         // For quiz slides: override duration with actual audio length + buffer
-        const isQuiz = slide.type === "quiz" || slide.type === "singleQuiz";
+        const isQuiz = slide.type === "dualQuiz" || slide.type === "singleQuiz";
         if (isQuiz) {
           const audioDuration = result.durationSeconds;
           slide.durationInSeconds = Math.round((audioDuration + 1.5) * 2) / 2;
           slide.revealTimeSeconds = result.revealTimeSeconds;
           slide.startFromSeconds = result.questionAndOptionsEndSeconds;
           console.log(`    → Slide ${index}: duration=${slide.durationInSeconds}s, reveal@${slide.revealTimeSeconds?.toFixed(1)}s, startTick@${slide.startFromSeconds?.toFixed(1)}s`);
+        }
+
+        // For kidsContent: set duration exactly to audio length (no silence)
+        if (slide.type === "kidsContent") {
+          slide.durationInSeconds = Math.ceil(result.durationSeconds * 2) / 2; // Round up to nearest 0.5s
+          console.log(`    → Kids Slide ${index}: duration=${slide.durationInSeconds}s (from audio)`);
         }
       } catch (error) {
         console.error(`Failed to generate TTS for slide ${index}:`, error);

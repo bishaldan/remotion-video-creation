@@ -5,6 +5,13 @@ import {
   TimelineSchema
 } from "../../types/edu";
 import {
+  defaultKidsTimeline,
+  EDU_KIDS_COMP_NAME,
+  EDU_KIDS_HEIGHT,
+  EDU_KIDS_WIDTH,
+  KidsTimelineSchema,
+} from "../../types/edu-kids";
+import {
   defaultDualQuizTimeline,
   defaultSingleQuizTimeline,
   DualQuizTimelineSchema,
@@ -24,6 +31,7 @@ import {
   VIDEO_HEIGHT,
   VIDEO_WIDTH
 } from "../../types/shared";
+import { calculateKidsDuration, EduKidsMain } from "./compositions/EduKids/Main";
 import { calculateQuizDuration, DualQuizMain } from "./compositions/DualQuiz/Main";
 import { calculateTimelineDuration, EduMain } from "./compositions/Edu/Main";
 import { calculateSingleQuizDuration, SingleQuizMain } from "./compositions/SingleQuiz/Main";
@@ -44,6 +52,16 @@ export const RemotionRoot: React.FC = () => {
             durationInFrames: calculateTimelineDuration(props.slides, VIDEO_FPS),
           };
         }}
+      />
+      <Composition
+        id={EDU_KIDS_COMP_NAME}
+        component={EduKidsMain}
+        durationInFrames={calculateKidsDuration(defaultKidsTimeline.slides)}
+        fps={VIDEO_FPS}
+        width={EDU_KIDS_WIDTH}
+        height={EDU_KIDS_HEIGHT}
+        schema={KidsTimelineSchema}
+        defaultProps={defaultKidsTimeline}
       />
       <Composition
         id={QUIZ_COMP_LANDSCAPE}

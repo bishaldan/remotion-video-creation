@@ -46,7 +46,10 @@ function cleanTTSText(text: string): string {
     .replace(/\*/g, "")
     .replace(/_/g, "")
     .replace(/#/g, "")
-    .replace(/`+/g, "")
+    // Remove emojis and symbols (simple range approach for broad compatibility)
+    .replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, "")
+    .replace(/[^\w\s.,?!'-]/g, "") // Remove most other non-word chars
+    .replace(/\s+/g, " ") // Collapse multiple spaces
     .trim();
 }
 
@@ -62,19 +65,19 @@ function buildFolderName(prompt: string, voiceName: string): string {
 let tts: KokoroTTS | null = null;
 
 async function getTTSModel() {
-    if (!tts) {
-        tts = await KokoroTTS.from_pretrained(MODEL_ID, {
-            dtype: "fp32",
-        });
-    }
-    return tts;
+  if (!tts) {
+    tts = await KokoroTTS.from_pretrained(MODEL_ID, {
+      dtype: "fp32",
+    });
+  }
+  return tts;
 }
 
 /**
  * Calculates audio duration in seconds from a Float32Array buffer and sample rate.
  */
 function getAudioDuration(audioData: Float32Array, sampleRate: number): number {
-    return audioData.length / sampleRate;
+  return audioData.length / sampleRate;
 }
 
 
@@ -102,17 +105,17 @@ export async function generateTTS(
 
   try {
     if (typeof text === 'object' && (text as any).parts) {
-        const result = await generateCombinedTTS((text as any).parts, filePath, options);
-        const url = `/audio/${folderName}/${fileName}`;
-        console.log(`  ✓ Generated Combined (Local): ${url} (${result.durationSeconds.toFixed(1)}s, reveal@${result.revealTimeSeconds?.toFixed(1) ?? 'N/A'}s)`);
-        return { url, ...result };
+      const result = await generateCombinedTTS((text as any).parts, filePath, options);
+      const url = `/audio/${folderName}/${fileName}`;
+      console.log(`  ✓ Generated Combined (Local): ${url} (${result.durationSeconds.toFixed(1)}s, reveal@${result.revealTimeSeconds?.toFixed(1) ?? 'N/A'}s)`);
+      return { url, ...result };
     }
 
     const model = await getTTSModel();
     const cleanText = cleanTTSText(text as string);
     const audio = await model.generate(cleanText, {
-        voice: (options.voice || "af_bella") as any,
-        speed: options.speed || 1.0,
+      voice: (options.voice || "af_bella") as any,
+      speed: options.speed || 1.0,
     });
 
     await audio.save(filePath);
@@ -133,9 +136,9 @@ export async function generateTTS(
  * Result from combined TTS generation, including duration and reveal timing.
  */
 interface CombinedTTSResult {
-    durationSeconds: number;
-    revealTimeSeconds?: number;
-    questionAndOptionsEndSeconds?: number;
+  durationSeconds: number;
+  revealTimeSeconds?: number;
+  questionAndOptionsEndSeconds?: number;
 }
 
 /**
@@ -143,70 +146,70 @@ interface CombinedTTSResult {
  * Tracks cumulative timing so we know exactly when each part starts.
  */
 async function generateCombinedTTS(
-    parts: { text: string; pauseAfter: number }[],
-    filePath: string,
-    options: KokoroOptions = {}
+  parts: { text: string; pauseAfter: number }[],
+  filePath: string,
+  options: KokoroOptions = {}
 ): Promise<CombinedTTSResult> {
-    const model = await getTTSModel();
-    const generatedParts = [];
-    
-    for (const part of parts) {
-        const cleanText = cleanTTSText(part.text);
-        const audio = await model.generate(cleanText, {
-            voice: (options.voice || "af_bella") as any,
-            speed: options.speed || 1.0,
-        });
-        generatedParts.push({ audio, pauseAfter: part.pauseAfter });
+  const model = await getTTSModel();
+  const generatedParts = [];
+
+  for (const part of parts) {
+    const cleanText = cleanTTSText(part.text);
+    const audio = await model.generate(cleanText, {
+      voice: (options.voice || "af_bella") as any,
+      speed: options.speed || 1.0,
+    });
+    generatedParts.push({ audio, pauseAfter: part.pauseAfter });
+  }
+
+  if (generatedParts.length === 0) return { durationSeconds: 0 };
+
+  const samplingRate = generatedParts[0].audio.sampling_rate || 24000;
+
+  // Track cumulative timing to find the reveal point
+  let totalLength = 0;
+  const partStartTimes: number[] = [];
+
+  for (const p of generatedParts) {
+    partStartTimes.push(totalLength / samplingRate); // Start time of this part in seconds
+    totalLength += p.audio.audio.length;
+
+    totalLength += Math.floor(p.pauseAfter * samplingRate);
+  }
+
+  const combinedBuffer = new Float32Array(totalLength);
+  let offset = 0;
+  let questionAndOptionsEnd = [];
+
+  for (const p of generatedParts) {
+    combinedBuffer.set(p.audio.audio, offset);
+    offset += p.audio.audio.length;
+    questionAndOptionsEnd.push(offset);
+    const silenceSamples = Math.floor(p.pauseAfter * samplingRate);
+    if (silenceSamples > 0) {
+      combinedBuffer.set(new Float32Array(silenceSamples).fill(0), offset);
+      offset += silenceSamples;
     }
+  }
 
-    if (generatedParts.length === 0) return { durationSeconds: 0 };
+  const RawAudio = generatedParts[0].audio.constructor as any;
+  const combinedAudio = new RawAudio(combinedBuffer, samplingRate);
+  await combinedAudio.save(filePath);
 
-    const samplingRate = generatedParts[0].audio.sampling_rate || 24000;
-    
-    // Track cumulative timing to find the reveal point
-    let totalLength = 0;
-    const partStartTimes: number[] = [];
-    
-    for (const p of generatedParts) {
-        partStartTimes.push(totalLength / samplingRate); // Start time of this part in seconds
-        totalLength += p.audio.audio.length;
+  const durationSeconds = totalLength / samplingRate;
 
-        totalLength += Math.floor(p.pauseAfter * samplingRate);
-    }
+  // The reveal time is when the LAST part (answer) starts playing
+  // For quiz narration: part[0] = question, part[1] = answer
+  const revealTimeSeconds = partStartTimes.length > 1
+    ? partStartTimes[partStartTimes.length - 1]
+    : undefined;
 
-    const combinedBuffer = new Float32Array(totalLength);
-    let offset = 0;
-    let questionAndOptionsEnd = [];
+  // Convert sample offset to seconds
+  const questionAndOptionsEndSeconds = questionAndOptionsEnd.length > 0
+    ? questionAndOptionsEnd[0] / samplingRate
+    : undefined;
 
-    for (const p of generatedParts) {
-        combinedBuffer.set(p.audio.audio, offset);
-        offset += p.audio.audio.length;
-        questionAndOptionsEnd.push(offset);
-        const silenceSamples = Math.floor(p.pauseAfter * samplingRate);
-        if (silenceSamples > 0) {
-            combinedBuffer.set(new Float32Array(silenceSamples).fill(0), offset);
-            offset += silenceSamples;
-        }
-    }
-
-    const RawAudio = generatedParts[0].audio.constructor as any;
-    const combinedAudio = new RawAudio(combinedBuffer, samplingRate);
-    await combinedAudio.save(filePath);
-
-    const durationSeconds = totalLength / samplingRate;
-    
-    // The reveal time is when the LAST part (answer) starts playing
-    // For quiz narration: part[0] = question, part[1] = answer
-    const revealTimeSeconds = partStartTimes.length > 1 
-        ? partStartTimes[partStartTimes.length - 1] 
-        : undefined;
-    
-    // Convert sample offset to seconds
-    const questionAndOptionsEndSeconds = questionAndOptionsEnd.length > 0 
-        ? questionAndOptionsEnd[0] / samplingRate 
-        : undefined;
-
-    return { durationSeconds, revealTimeSeconds, questionAndOptionsEndSeconds };
+  return { durationSeconds, revealTimeSeconds, questionAndOptionsEndSeconds };
 }
 
 
@@ -222,11 +225,11 @@ async function generateCombinedTTS(
 function formatQuizNarration(slide: any) {
   const letters = ["A", "B", "C", "D"];
   const optionCount = slide.options.length;
-  
+
   const optionsText = slide.options
     .map((opt: string, i: number) => {
-        const prefix = i === slide.options.length - 1 ? "or " : "";
-        return `${prefix}${letters[i]}. ${opt}.`;
+      const prefix = i === slide.options.length - 1 ? "or " : "";
+      return `${prefix}${letters[i]}. ${opt}.`;
     })
     .join("  ");
 
@@ -263,9 +266,12 @@ function getNarrationText(slide: any): string | { parts: { text: string; pauseAf
       return slide.caption || slide.imageQuery || "Look at this image.";
     case "lottie":
       return `${slide.title ? slide.title + ". " : ""}${slide.text}`;
-    case "quiz":
+    case "dualQuiz":
     case "singleQuiz":
       return formatQuizNarration(slide);
+    case "kidsContent":
+      // Join all lines into one continuous narration (no silence gaps)
+      return slide.lines.join(". ");
     case "outro":
       return `${slide.title || ""}. ${slide.callToAction || ""}`;
     default:
@@ -291,14 +297,14 @@ export async function setNarrationUrls(
   for (let index = 0; index < timeline.slides.length; index++) {
     const slide = timeline.slides[index];
     const text = getNarrationText(slide);
-    
+
     if (text) {
       try {
         const result = await generateTTS(text, `slide-${index}`, folderName, options);
         slide.narrationUrl = result.url;
 
         // For quiz slides: override duration with actual audio length + buffer
-        const isQuiz = slide.type === "quiz" || slide.type === "singleQuiz";
+        const isQuiz = slide.type === "dualQuiz" || slide.type === "singleQuiz";
         if (isQuiz) {
           const audioDuration = result.durationSeconds;
           // Add 1.5s buffer after audio ends for visual breathing room
@@ -306,6 +312,20 @@ export async function setNarrationUrls(
           slide.revealTimeSeconds = result.revealTimeSeconds;
           slide.startFromSeconds = result.questionAndOptionsEndSeconds;
           console.log(`    → Slide ${index}: duration=${slide.durationInSeconds}s, reveal@${slide.revealTimeSeconds?.toFixed(1)}s, startTick@${slide.startFromSeconds?.toFixed(1)}s`);
+        }
+
+        // For kidsContent: set duration exactly to audio length (no silence)
+        if (slide.type === "kidsContent") {
+          slide.durationInSeconds = Math.ceil(result.durationSeconds * 2) / 2; // Round up to nearest 0.5s
+          console.log(`    → Kids Slide ${index}: duration=${slide.durationInSeconds}s (from audio)`);
+        }
+
+        // For other narrative slides (intro, outro, etc.): sync duration with audio
+        if (["intro", "outro", "text", "bullets", "diagram", "threeD", "image", "lottie"].includes(slide.type)) {
+          // Add a small buffer (0.5s) so it doesn't feel abrupt
+          const newDuration = Math.ceil((result.durationSeconds + 0.5) * 2) / 2;
+          slide.durationInSeconds = newDuration;
+          console.log(`    → ${slide.type} Slide ${index}: duration updated to ${slide.durationInSeconds}s (from audio + 0.5s buffer)`);
         }
       } catch (error) {
         console.error(`Failed to generate TTS for slide ${index}:`, error);
