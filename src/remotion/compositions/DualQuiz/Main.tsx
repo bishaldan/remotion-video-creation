@@ -100,7 +100,7 @@ export const DualQuizMain: React.FC<z.infer<typeof DualQuizTimelineSchema>> = ({
 
       {/* Background music — plays between intro and outro */}
       <Sequence from={bgMusicFrom} durationInFrames={bgMusicDuration}>
-        <Html5Audio src={staticFile("audio/sfx/bg/mysterious-background.mp3")} loop volume={0.15} />
+        <Html5Audio src={staticFile("audio/default/sfx/bg/mysterious-background.mp3")} loop volume={0.15} />
       </Sequence>
     </AbsoluteFill>
   );

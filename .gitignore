@@ -56,21 +56,8 @@ out
 public/audio/*
 
 # Allow sfx
-!public/audio/sfx/
+!public/audio/default/
 
 # Typecast: un-ignore folder, ignore content, re-allow default
 !public/audio/typecast/default/
 
-# Kokoro: un-ignore folder, ignore content, re-allow default
-!public/audio/kokoro/2026-02-17/Santa/default-kids-content/
-!public/audio/kokoro/default/
-
-# Re-include the specific folders
-!public/audio/solar-system-quiz-enhanced-v4_quiz_2026-02-11/
-!public/audio/official-single-quiz-v5_singleQuiz_2026-02-11/
-!public/audio/official-education-v2_education_2026-02-11/
-
-# Re-include their contents
-!public/audio/solar-system-quiz-enhanced-v4_quiz_2026-02-11/**
-!public/audio/official-single-quiz-v5_singleQuiz_2026-02-11/**
-!public/audio/official-education-v2_education_2026-02-11/**

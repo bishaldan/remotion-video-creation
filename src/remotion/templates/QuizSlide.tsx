@@ -240,10 +240,10 @@ export const DualQuizSlide: React.FC<QuizSlideProps> = ({
 
         {/* Quiz Sound Effects */}
         <Sequence from={Math.round((startFromSeconds || 0) * fps)} durationInFrames={Math.max(1, Math.round(revealFrame - 0.25 * fps) - Math.round((startFromSeconds || 0) * fps))}>
-          <Html5Audio src={staticFile("audio/sfx/clock/tick.mp3")} loop volume={0.3} />
+          <Html5Audio src={staticFile("audio/default/sfx/clock/tick.mp3")} loop volume={0.3} />
         </Sequence>
         <Sequence from={Math.round(revealFrame)} durationInFrames={Math.round(1.5 * fps)}>
-          <Html5Audio src={staticFile("audio/sfx/clock/correct.mp3")} volume={0.6} />
+          <Html5Audio src={staticFile("audio/default/sfx/clock/correct.mp3")} volume={0.6} />
         </Sequence>
       </AbsoluteFill>
     </AbsoluteFill>

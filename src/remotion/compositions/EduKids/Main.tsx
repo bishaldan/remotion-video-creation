@@ -89,7 +89,7 @@ export const EduKidsMain: React.FC<z.infer<typeof KidsTimelineSchema>> = ({
             {/* Background music — plays between intro and outro */}
             <Sequence from={bgMusicFrom} durationInFrames={bgMusicDuration}>
                 <Html5Audio
-                    src={staticFile("audio/sfx/bg/kid.mp3")}
+                    src={staticFile("audio/default/sfx/bg/kid.mp3")}
                     loop
                     volume={0.10}
                 />

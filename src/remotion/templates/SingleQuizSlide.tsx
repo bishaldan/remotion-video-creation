@@ -337,13 +337,13 @@ export const SingleQuizSlide: React.FC<SingleQuizSlideProps> = ({
               const optionBgColor = isRevealed && isCorrect
                 ? interpolateColors(revealSpring, [0, 1], ["#ffffff", "rgba(76, 175, 80, 0.9)"])
                 : isRevealed
-                ? interpolateColors(revealSpring, [0, 1], ["#ffffff", "rgba(255,255,255,0.5)"])
-                : "#ffffff";
+                  ? interpolateColors(revealSpring, [0, 1], ["#ffffff", "rgba(255,255,255,0.5)"])
+                  : "#ffffff";
               const optionTextColor = isRevealed && isCorrect
                 ? interpolateColors(revealSpring, [0, 1], ["#333333", "#ffffff"])
                 : isRevealed
-                ? interpolateColors(revealSpring, [0, 1], ["#333333", "#999999"])
-                : "#333333";
+                  ? interpolateColors(revealSpring, [0, 1], ["#333333", "#999999"])
+                  : "#333333";
 
               return (
                 <div
@@ -433,10 +433,10 @@ export const SingleQuizSlide: React.FC<SingleQuizSlideProps> = ({
 
       {/* Quiz Sound Effects */}
       <Sequence from={Math.round((startFromSeconds || 0) * fps)} durationInFrames={Math.max(1, Math.round(revealFrame - 0.25 * fps) - Math.round((startFromSeconds || 0) * fps))}>
-        <Html5Audio src={staticFile("audio/sfx/clock/tick.mp3")} loop volume={0.3} />
+        <Html5Audio src={staticFile("audio/default/sfx/clock/tick.mp3")} loop volume={0.3} />
       </Sequence>
       <Sequence from={Math.round(revealFrame)} durationInFrames={Math.round(1.5 * fps)}>
-        <Html5Audio src={staticFile("audio/sfx/clock/correct.mp3")} volume={0.3} />
+        <Html5Audio src={staticFile("audio/default/sfx/clock/correct.mp3")} volume={0.3} />
       </Sequence>
     </AbsoluteFill>
   );

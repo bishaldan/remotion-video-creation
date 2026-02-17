@@ -129,8 +129,8 @@ export const defaultEduCompProps: Timeline = {
       title: "The Wonder of Learning",
       subtitle: "Exploring New Horizons with AI",
       author: "Remotion Series",
-      durationInSeconds: 5.5,
-      narrationUrl: "/audio/official-education-v2_education_2026-02-11/slide-0.wav",
+      durationInSeconds: 6.5,
+      narrationUrl: "/audio/default/typecast-default/2026-02-17/Elise/default-edu-content/slide-0.wav",
     },
     {
       type: "lottie",
@@ -139,7 +139,7 @@ export const defaultEduCompProps: Timeline = {
       text: "This video uses AI-generated content with animated characters to make learning fun and engaging.",
       position: "left",
       durationInSeconds: 11,
-      narrationUrl: "/audio/official-education-v2_education_2026-02-11/slide-1.wav",
+      narrationUrl: "/audio/default/typecast-default/2026-02-17/Elise/default-edu-content/slide-1.wav",
     },
     {
       type: "bullets",
@@ -150,8 +150,8 @@ export const defaultEduCompProps: Timeline = {
         "Generate videos from prompts using **AI**",
         "Add images and **Lottie animations**",
       ],
-      durationInSeconds: 13.5,
-      narrationUrl: "/audio/official-education-v2_education_2026-02-11/slide-2.wav",
+      durationInSeconds: 16,
+      narrationUrl: "/audio/default/typecast-default/2026-02-17/Elise/default-edu-content/slide-2.wav",
     },
     {
       type: "image",
@@ -159,15 +159,15 @@ export const defaultEduCompProps: Timeline = {
       caption: "Powered by AI and beautiful visuals",
       kenBurns: "zoomIn",
       creditText: "Unsplash",
-      durationInSeconds: 4,
-      narrationUrl: "/audio/official-education-v2_education_2026-02-11/slide-3.wav",
+      durationInSeconds: 5,
+      narrationUrl: "/audio/default/typecast-default/2026-02-17/Elise/default-edu-content/slide-3.wav",
     },
     {
       type: "outro",
       title: "Thanks for Watching!",
       callToAction: "Created with Remotion SaaS",
-      durationInSeconds: 4.5,
-      narrationUrl: "/audio/official-education-v2_education_2026-02-11/slide-4.wav",
+      durationInSeconds: 5.5,
+      narrationUrl: "/audio/default/typecast-default/2026-02-17/Elise/default-edu-content/slide-4.wav",
     }
   ],
 };

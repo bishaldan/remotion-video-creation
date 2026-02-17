@@ -55,8 +55,8 @@ export const defaultKidsTimeline: KidsTimeline = {
             subtitle: "Let's Learn Together!",
             author: "Kids Learning",
             backgroundColor: "linear-gradient(135deg, #ff6b6b 0%, #feca57 100%)",
-            durationInSeconds: 5,
-            narrationUrl: "/audio/kokoro/2026-02-17/Santa/default-kids-content/slide-0.wav"
+            durationInSeconds: 6,
+            narrationUrl: "/audio/default/typecast-default/2026-02-17/Walter/default-kids-content/slide-0.wav"
         },
         {
             type: "kidsContent",
@@ -88,16 +88,16 @@ export const defaultKidsTimeline: KidsTimeline = {
                 "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Tropical_fish.jpg/1920px-Tropical_fish.jpg",
                 "https://upload.wikimedia.org/wikipedia/commons/8/82/American_homes_and_gardens_%281908%29_%2818151902362%29.jpg"
             ],
-            durationInSeconds: 15.5,
-            narrationUrl: "/audio/kokoro/2026-02-17/Santa/default-kids-content/slide-1.wav"
+            durationInSeconds: 19,
+            narrationUrl: "/audio/default/typecast-default/2026-02-17/Walter/default-kids-content/slide-1.wav"
         },
         {
             type: "outro",
             title: "Great Job Learning! 🌟",
             callToAction: "Follow for more fun facts!",
             backgroundColor: "linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%)",
-            durationInSeconds: 5,
-            narrationUrl: "/audio/kokoro/2026-02-17/Santa/default-kids-content/slide-2.wav"
+            durationInSeconds: 5.5,
+            narrationUrl: "/audio/default/typecast-default/2026-02-17/Walter/default-kids-content/slide-2.wav"
         },
     ],
 };
