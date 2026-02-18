@@ -13,6 +13,7 @@
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "@remotion/bundler": "4.0.421",
+    "@remotion/captions": "^4.0.423",
     "@remotion/cli": "4.0.421",
     "@remotion/google-fonts": "4.0.421",
     "@remotion/lambda": "4.0.421",

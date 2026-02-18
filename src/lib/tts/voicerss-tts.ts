@@ -75,16 +75,16 @@ export async function generateTTS(
   // Check if response is text (error) starting with "ERROR: "
   const contentType = response.headers.get("content-type");
   if (contentType && contentType.includes("text/plain")) {
-     const textResp = await response.text();
-     if (textResp.startsWith("ERROR:")) {
-         throw new Error(`VoiceRSS API Error: ${textResp}`);
-     }
-     // If it's text but not an error?? (Unlikely for MP3 request)
+    const textResp = await response.text();
+    if (textResp.startsWith("ERROR:")) {
+      throw new Error(`VoiceRSS API Error: ${textResp}`);
+    }
+    // If it's text but not an error?? (Unlikely for MP3 request)
   }
 
   // Save the audio buffer to disk
   const audioBuffer = new Uint8Array(await response.arrayBuffer());
-  
+
   // VoiceRSS returns "ERROR: ..." as the body if something goes wrong even with 200 OK sometimes,
   // but if we requested MP3 and got text, we should check.
   // The check above covers it.
@@ -114,7 +114,7 @@ function getNarrationText(slide: any): string {
       return slide.caption || slide.imageQuery || "Look at this image.";
     case "lottie":
       return `${slide.title ? slide.title + ". " : ""}${slide.text}`;
-    case "quiz":
+    case "dualQuiz":
     case "singleQuiz":
       return `${slide.question}. Is it: ${slide.options.join(", or ")}?`;
     case "outro":

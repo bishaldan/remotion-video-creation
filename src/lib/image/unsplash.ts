@@ -11,7 +11,8 @@
  */
 
 import { Timeline } from "../../../types/edu";
-import { QuizTimeline, SingleQuizTimeline } from "../../../types/quiz";
+import { KidsTimeline } from "../../../types/edu-kids";
+import { DualQuizTimeline, SingleQuizTimeline } from "../../../types/quiz";
 
 // ─────────────────────────────────────────────────────────────────
 // Shared types
@@ -38,7 +39,7 @@ async function searchUnsplashProvider(
   query: string,
   orientation: "landscape" | "portrait" | "squarish"
 ): Promise<ImageResult | null> {
-  const accessKey = process.env.UNSPLASH_ACCESS_KEY;
+  const accessKey = process.env.UNSPLASH_ACCESS_KEY?.trim();
   if (!accessKey) return null;
 
   try {
@@ -317,42 +318,73 @@ export const batchSearchUnsplash = batchSearchImages;
 // ─────────────────────────────────────────────────────────────────
 
 export async function setImagesUrl(
-  timeline: Timeline | QuizTimeline | SingleQuizTimeline,
+  timeline: Timeline | DualQuizTimeline | SingleQuizTimeline | KidsTimeline,
   orientation: "landscape" | "portrait" | "squarish" = "landscape"
 ) {
+  // User Request: Prioritize 'portrait' orientation for DualQuiz mode regardless of video orientation
+  const isDualQuiz = (timeline as any).mode === "dualQuiz" || timeline.slides.some((s: any) => s.type === "dualQuiz");
+  const effectiveOrientation = isDualQuiz ? "portrait" : orientation;
   const imageQueries: string[] = [];
   const imageSlides: number[] = [];
+
+  // Track kidsContent slides separately (they have multiple images)
+  const kidsContentSlides: { slideIndex: number; queries: string[] }[] = [];
 
   timeline.slides.forEach((slide: any, index: number) => {
     if (slide.type === "image" && slide.imageQuery) {
       imageQueries.push(slide.imageQuery);
       imageSlides.push(index);
-    } else if (slide.type === "quiz" && slide.backgroundQuery) {
+    } else if (slide.type === "dualQuiz" && slide.backgroundQuery) {
       imageQueries.push(slide.backgroundQuery);
       imageSlides.push(index);
     } else if (slide.type === "singleQuiz" && slide.imageQuery) {
       imageQueries.push(slide.imageQuery);
       imageSlides.push(index);
+    } else if (slide.type === "kidsContent" && slide.backgroundImageQueries) {
+      kidsContentSlides.push({ slideIndex: index, queries: slide.backgroundImageQueries });
+      // Add all queries to the batch with kid-friendly modifiers
+      for (const q of slide.backgroundImageQueries) {
+        const modifiedQuery = q;
+        imageQueries.push(modifiedQuery);
+      }
     }
   });
 
   if (imageQueries.length > 0) {
-    console.log("Fetching images for:", imageQueries);
+    console.log(`Fetching images for ${isDualQuiz ? "DualQuiz (forced portrait)" : "timeline"}...`);
 
-    const imagesMap = await batchSearchImages(imageQueries, orientation);
+    const imagesMap = await batchSearchImages(imageQueries, effectiveOrientation);
 
+    // Handle standard slides
+    let queryIndex = 0;
     for (let i = 0; i < imageSlides.length; i++) {
       const slideIndex = imageSlides[i];
-      const query = imageQueries[i];
+      const query = imageQueries[queryIndex];
       const image = imagesMap.get(query);
       const slide = timeline.slides[slideIndex] as any;
 
       if (image) {
         if (slide.type === "image") slide.imageUrl = image.url;
-        else if (slide.type === "quiz") slide.backgroundUrl = image.url;
+        else if (slide.type === "dualQuiz") slide.backgroundUrl = image.url;
         else if (slide.type === "singleQuiz") slide.imageUrl = image.url;
       }
-      // No more deprecated source.unsplash.com fallback — the cascade handles it
+      queryIndex++;
+    }
+
+    // Handle kidsContent slides (multiple images per slide)
+    for (const kidsSlide of kidsContentSlides) {
+      const slide = timeline.slides[kidsSlide.slideIndex] as any;
+      const urls: string[] = [];
+      for (const q of kidsSlide.queries) {
+        // We must reconstruct the modified query to retrieve from the map
+        const modifiedQuery = q;
+        const image = imagesMap.get(modifiedQuery);
+        if (image) {
+          urls.push(image.url);
+        }
+      }
+      slide.backgroundImageUrls = urls;
+      console.log(`  → kidsContent slide ${kidsSlide.slideIndex}: ${urls.length} background images resolved`);
     }
   }
 }

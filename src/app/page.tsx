@@ -12,6 +12,14 @@ import {
   type Timeline
 } from "../../types/edu";
 import {
+  defaultKidsTimeline,
+  EDU_KIDS_COMP_NAME,
+  EDU_KIDS_HEIGHT,
+  EDU_KIDS_WIDTH,
+  KidsTimeline,
+  KidsTimelineSchema
+} from "../../types/edu-kids";
+import {
   defaultDualQuizTimeline,
   defaultSingleQuizTimeline,
   DualQuizTimelineSchema,
@@ -25,7 +33,7 @@ import {
   SINGLE_QUIZ_HEIGHT,
   SINGLE_QUIZ_WIDTH,
   SingleQuizTimelineSchema,
-  type QuizTimeline,
+  type DualQuizTimeline,
   type SingleQuizTimeline
 } from "../../types/quiz";
 import {
@@ -38,26 +46,34 @@ import { Spacing } from "../components/Spacing";
 import { KOKORO_VOICES, KokoroVoice, TYPECAST_VOICES, TypecastVoice } from "../lib/tts/voice-constants";
 import { calculateQuizDuration, DualQuizMain } from "../remotion/compositions/DualQuiz/Main";
 import { calculateTimelineDuration, EduMain } from "../remotion/compositions/Edu/Main";
+import { calculateKidsDuration, EduKidsMain } from "../remotion/compositions/EduKids/Main";
 import { calculateSingleQuizDuration, SingleQuizMain } from "../remotion/compositions/SingleQuiz/Main";
 
 const Home: NextPage = () => {
 
   // THESE 3 are of persisting the state of the timeline so that it doesnt reset to default on re-render
   const [singleQuizTimelineState, setSingleQuizTimelineState] = useState<SingleQuizTimeline>(defaultSingleQuizTimeline);
-  const [dualQuizTimelineState, setDualQuizTimelineState] = useState<QuizTimeline>(defaultDualQuizTimeline);
+  const [dualQuizTimelineState, setDualQuizTimelineState] = useState<DualQuizTimeline>(defaultDualQuizTimeline);
   const [eduTimelineState, setEduTimelineState] = useState<Timeline>(defaultEduCompProps);
+  const [eduKidsTimelineState, setEduKidsTimelineState] = useState<KidsTimeline>(defaultKidsTimeline);
 
   //Main States
   const [prompt, setPrompt] = useState<string>("");
   const [mode, setMode] = useState<"education" | "quiz">("education");
-  const [quizFormat, setQuizFormat] = useState<"dual" | "single">("dual");
-  const [orientation, setOrientation] = useState<"landscape" | "portrait">("landscape");
+
+  // Sub-modes
+  const [quizMode, setQuizMode] = useState<"dual" | "single">("dual");
+  const [eduMode, setEduMode] = useState<"mode1" | "mode2">("mode1");
+
+  const [orientation, setOrientation] = useState<"landscape" | "portrait">(
+    "landscape"
+  );
 
   // Voice Preview States
   const [voiceProvider, setVoiceProvider] = useState<"kokoro" | "typecast">("kokoro");
   const [previewVoiceId, setPreviewVoiceId] = useState<string>("");
 
-  const [timeline, setTimeline] = useState<Timeline | QuizTimeline | SingleQuizTimeline>(eduTimelineState);
+  const [timeline, setTimeline] = useState<Timeline | DualQuizTimeline | SingleQuizTimeline | KidsTimeline>(eduTimelineState);
   const [isGenerating, setIsGenerating] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
@@ -85,14 +101,20 @@ const Home: NextPage = () => {
   //Gets the total duration of the video in frames
   const durationInFrames = useMemo(() => {
     if (mode === "quiz") {
-      if (quizFormat === "single") {
+      if (quizMode === "single") {
         return calculateSingleQuizDuration((timeline as SingleQuizTimeline).slides, VIDEO_FPS);
       }
-      return calculateQuizDuration((timeline as QuizTimeline).slides, VIDEO_FPS);
+      return calculateQuizDuration((timeline as DualQuizTimeline).slides, VIDEO_FPS);
+    }
+    if (mode === "education" && eduMode === "mode2") {
+      return calculateKidsDuration((timeline as KidsTimeline).slides, VIDEO_FPS);
     }
     return calculateTimelineDuration((timeline as Timeline).slides, VIDEO_FPS);
-  }, [timeline, mode, quizFormat]);
+  }, [timeline, mode, eduMode, quizMode]);
 
+  //====================================================================================================================================================================================
+  //==================================================================== PDF HANDLER ===================================================================================================
+  //====================================================================================================================================================================================
   //Seek to a specific slide
   const seekToSlide = useCallback((index: number) => {
     if (!playerRef.current) return;
@@ -107,14 +129,14 @@ const Home: NextPage = () => {
   //TIMELINE SLIDE ORDER HANDLER
   const moveSlide = useCallback((index: number, direction: "up" | "down") => {
     setTimeline(((prev: unknown) => {
-      const newSlides = [...(prev as unknown as Timeline | QuizTimeline | SingleQuizTimeline).slides];
+      const newSlides = [...(prev as unknown as Timeline | DualQuizTimeline | SingleQuizTimeline).slides];
       if (direction === "up" && index > 0) {
         [newSlides[index], newSlides[index - 1]] = [newSlides[index - 1], newSlides[index]];
       } else if (direction === "down" && index < newSlides.length - 1) {
         [newSlides[index], newSlides[index + 1]] = [newSlides[index + 1], newSlides[index]];
       }
-      return { ...(prev as unknown as Timeline | QuizTimeline | SingleQuizTimeline), slides: newSlides };
-    }) as unknown as Timeline | QuizTimeline | SingleQuizTimeline);
+      return { ...(prev as unknown as Timeline | DualQuizTimeline | SingleQuizTimeline), slides: newSlides };
+    }) as unknown as Timeline | DualQuizTimeline | SingleQuizTimeline);
   }, [timeline]);
 
   //FILE HANDLER
@@ -177,7 +199,9 @@ const Home: NextPage = () => {
     }
   }, [handleFileSelect]);
 
-  //=========API ENDPOINTS=================
+  //====================================================================================================================================================================================
+  //====================================================================API ENDPOINTS===================================================================================================
+  //====================================================================================================================================================================================
   // POST GENERATE
   const handleGenerate = useCallback(async () => {
     // Validate that either PDF or prompt is provided
@@ -191,6 +215,20 @@ const Home: NextPage = () => {
 
     try {
       let response: Response;
+
+      // Determine effective mode for API
+      let effectiveMode = "normal";
+      if (mode === "education") {
+        if (eduMode === "mode2") effectiveMode = "educationKids";
+        else effectiveMode = "normal";
+      } else if (mode === "quiz") {
+        if (quizMode === "single") effectiveMode = "singleQuiz";
+        else effectiveMode = "dualQuiz";
+      }
+
+      // Determine voice IDs
+      const kokoroVoiceId = previewVoiceId || "af_bella";
+      const typecastVoiceId = previewVoiceId || "tc_6791c4a4c79515dea68b4a75";
 
       // Check if PDF file is present
       if (pdfFile) {
@@ -213,12 +251,11 @@ const Home: NextPage = () => {
             formData.append("prompt", prompt.trim());
           }
 
-          const effectiveMode = mode === "quiz" && quizFormat === "single" ? "singleQuiz" : mode;
           formData.append("mode", effectiveMode);
           formData.append("voiceType", voiceProvider);
-          formData.append("voiceId", previewVoiceId || (voiceProvider === "kokoro" ? "af_bella" : "tc_6791c4a4c79515dea68b4a75"));
+          formData.append("voiceId", voiceProvider === "kokoro" ? kokoroVoiceId : typecastVoiceId);
 
-          if (mode === "quiz" && quizFormat === "dual") {
+          if (mode === "quiz" && quizMode === "dual") {
             formData.append("orientation", orientation);
           }
         } catch (fileError) {
@@ -250,8 +287,6 @@ const Home: NextPage = () => {
         // Set loading message for generation
         setLoadingMessage("Generating video timeline...");
 
-        const effectiveMode = mode === "quiz" && quizFormat === "single" ? "singleQuiz" : mode;
-
         // Maintain JSON request for text-only mode (backward compatibility)
         try {
           response = await fetch("/api/generate", {
@@ -260,9 +295,9 @@ const Home: NextPage = () => {
             body: JSON.stringify({
               prompt,
               mode: effectiveMode,
-              orientation: (mode === "quiz" && quizFormat === "dual") ? orientation : undefined,
+              orientation: (mode === "quiz" && quizMode === "dual") ? orientation : undefined,
               voiceType: voiceProvider,
-              voiceId: previewVoiceId || (voiceProvider === "kokoro" ? "af_bella" : "tc_6791c4a4c79515dea68b4a75")
+              voiceId: voiceProvider === "kokoro" ? kokoroVoiceId : typecastVoiceId
             }),
           });
         } catch {
@@ -300,7 +335,7 @@ const Home: NextPage = () => {
       const data = await response.json();
 
       if (mode === "quiz") {
-        if (quizFormat === "single") {
+        if (quizMode === "single") {
           const parsed = SingleQuizTimelineSchema.safeParse(data.timeline);
           if (!parsed.success) {
             console.error("Single Quiz Parse Error:", parsed.error);
@@ -318,12 +353,22 @@ const Home: NextPage = () => {
           setDualQuizTimelineState(parsed.data);
         }
       } else {
-        const parsed = TimelineSchema.safeParse(data.timeline);
-        if (!parsed.success) {
-          throw new Error("Invalid timeline format received from server");
+        if (eduMode === "mode2") {
+          const parsed = KidsTimelineSchema.safeParse(data.timeline);
+          if (!parsed.success) {
+            console.error("Kids Timeline Parse Error:", parsed.error);
+            throw new Error("Invalid kids timeline format received");
+          }
+          setTimeline(parsed.data);
+          setEduKidsTimelineState(parsed.data);
+        } else {
+          const parsed = TimelineSchema.safeParse(data.timeline);
+          if (!parsed.success) {
+            throw new Error("Invalid timeline format received from server");
+          }
+          setTimeline(parsed.data);
+          setEduTimelineState(parsed.data);
         }
-        setTimeline(parsed.data);
-        setEduTimelineState(parsed.data);
       }
       toast.success("Video generated successfully!");
       canvasConfetti();
@@ -339,7 +384,8 @@ const Home: NextPage = () => {
       setIsGenerating(false);
       setLoadingMessage("");
     }
-  }, [prompt, pdfFile]);
+  }, [prompt, pdfFile, mode, eduMode, quizMode, orientation, voiceProvider, previewVoiceId]);
+
   //PATCH GENERATE
   const handleEdit = useCallback(async () => {
     if (!editPrompt.trim()) {
@@ -356,11 +402,21 @@ const Home: NextPage = () => {
       formData.append("timeline", JSON.stringify(timeline));
       formData.append("prompt", editPrompt);
       // Pass current mode/orientation for context if needed, though timeline usually has it
-      const effectiveMode = mode === "quiz" && quizFormat === "single" ? "singleQuiz" : mode;
+      let effectiveMode = "normal";
+      if (mode === "education") {
+        if (eduMode === "mode2") effectiveMode = "educationKids";
+        else effectiveMode = "normal";
+      } else if (mode === "quiz") {
+        if (quizMode === "single") effectiveMode = "singleQuiz";
+        else effectiveMode = "dualQuiz";
+      }
       formData.append("mode", effectiveMode);
       formData.append("orientation", orientation);
+
+      const kokoroVoiceId = previewVoiceId || "af_bella";
+      const typecastVoiceId = previewVoiceId || "tc_6791c4a4c79515dea68b4a75";
       formData.append("voiceType", voiceProvider);
-      formData.append("voiceId", previewVoiceId || (voiceProvider === "kokoro" ? "af_bella" : "tc_6791c4a4c79515dea68b4a75"));
+      formData.append("voiceId", voiceProvider === "kokoro" ? kokoroVoiceId : typecastVoiceId);
 
       if (pdfFile) {
         formData.append("pdf", pdfFile);
@@ -384,7 +440,7 @@ const Home: NextPage = () => {
 
       const data = await response.json();
       if (mode === "quiz") {
-        if (quizFormat === "single") {
+        if (quizMode === "single") {
           const parsedSingle = SingleQuizTimelineSchema.safeParse(data.timeline);
           if (!parsedSingle.success) {
             console.error("Single Quiz Parse Error:", parsedSingle.error);
@@ -393,20 +449,31 @@ const Home: NextPage = () => {
           setTimeline(parsedSingle.data);
           setSingleQuizTimelineState(parsedSingle.data);
         } else {
-          const parsedQuiz = DualQuizTimelineSchema.safeParse(data.timeline);
-          if (!parsedQuiz.success) {
-            throw new Error("Invalid quiz timeline format");
+          const parsedDual = DualQuizTimelineSchema.safeParse(data.timeline);
+          if (!parsedDual.success) {
+            console.error("Quiz Parse Error:", parsedDual.error);
+            throw new Error("Invalid quiz timeline format received");
           }
-          setTimeline(parsedQuiz.data);
-          setDualQuizTimelineState(parsedQuiz.data);
+          setTimeline(parsedDual.data);
+          setDualQuizTimelineState(parsedDual.data);
         }
       } else {
-        const parsed = TimelineSchema.safeParse(data.timeline);
-        if (!parsed.success) {
-          throw new Error("Invalid timeline format received from server");
+        if (eduMode === "mode2") {
+          const parsed = KidsTimelineSchema.safeParse(data.timeline);
+          if (!parsed.success) {
+            console.error("Kids Timeline Parse Error:", parsed.error);
+            throw new Error("Invalid kids timeline format received");
+          }
+          setTimeline(parsed.data);
+          setEduKidsTimelineState(parsed.data);
+        } else {
+          const parsed = TimelineSchema.safeParse(data.timeline);
+          if (!parsed.success) {
+            throw new Error("Invalid timeline format received from server");
+          }
+          setTimeline(parsed.data);
+          setEduTimelineState(parsed.data);
         }
-        setTimeline(parsed.data);
-        setEduTimelineState(parsed.data);
       }
 
       toast.success("Video edited successfully!");
@@ -423,7 +490,7 @@ const Home: NextPage = () => {
       setIsGenerating(false);
       setLoadingMessage("");
     }
-  }, [timeline, editPrompt]);
+  }, [timeline, editPrompt, mode, eduMode, quizMode, orientation, voiceProvider, previewVoiceId, pdfFile]);
 
   if (!mounted) {
     return (
@@ -462,7 +529,7 @@ const Home: NextPage = () => {
                   : "text-slate-400 hover:text-white"
                   }`}
               >
-                Normal Mode
+                Education Mode
               </button>
               <button
                 onClick={() => {
@@ -478,16 +545,47 @@ const Home: NextPage = () => {
               </button>
             </div>
 
+            {mode === "education" && (
+              <div className="flex flex-col gap-3 w-full sm:w-auto animate-in fade-in slide-in-from-left-4 duration-300">
+                <div className="flex bg-black/20 p-1 rounded-xl w-max">
+                  <button
+                    onClick={() => {
+                      setEduMode("mode1");
+                      setTimeline(eduTimelineState);
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${eduMode === "mode1"
+                      ? "bg-indigo-600 text-white shadow-lg"
+                      : "text-slate-400 hover:text-white"
+                      }`}
+                  >
+                    Normal
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEduMode("mode2");
+                      setTimeline(eduKidsTimelineState);
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${eduMode === "mode2"
+                      ? "bg-indigo-600 text-white shadow-lg"
+                      : "text-slate-400 hover:text-white"
+                      }`}
+                  >
+                    Kids Mode
+                  </button>
+                </div>
+              </div>
+            )}
+
             {mode === "quiz" && (
               <div className="flex flex-col gap-3 w-full sm:w-auto animate-in fade-in slide-in-from-left-4 duration-300">
                 {/* Format Selection (Dual vs Single) */}
                 <div className="flex bg-black/20 p-1 rounded-xl w-max">
                   <button
                     onClick={() => {
-                      setQuizFormat("dual");
+                      setQuizMode("dual");
                       setTimeline(dualQuizTimelineState);
                     }}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${quizFormat === "dual"
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${quizMode === "dual"
                       ? "bg-indigo-600 text-white shadow-lg"
                       : "text-slate-400 hover:text-white"
                       }`}
@@ -496,10 +594,10 @@ const Home: NextPage = () => {
                   </button>
                   <button
                     onClick={() => {
-                      setQuizFormat("single");
+                      setQuizMode("single");
                       setTimeline(singleQuizTimelineState);
                     }}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${quizFormat === "single"
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${quizMode === "single"
                       ? "bg-indigo-600 text-white shadow-lg"
                       : "text-slate-400 hover:text-white"
                       }`}
@@ -509,7 +607,7 @@ const Home: NextPage = () => {
                 </div>
 
                 {/* Orientation Selection (Only for Dual Mode) */}
-                {quizFormat === "dual" && (
+                {quizMode === "dual" && (
                   <div className="flex bg-black/20 p-1 rounded-xl w-max animate-in fade-in slide-in-from-top-2">
                     <button
                       onClick={() => setOrientation("landscape")}
@@ -891,28 +989,31 @@ const Home: NextPage = () => {
               <Player
                 ref={playerRef}
                 component={(
-                  mode === "education" ? EduMain :
-                    (quizFormat === "single" ? SingleQuizMain : DualQuizMain)
+                  mode === "education" ? (eduMode === "mode2" ? EduKidsMain : EduMain) :
+                    (quizMode === "single" ? SingleQuizMain : DualQuizMain)
                 ) as unknown as React.ComponentType<unknown>}
                 inputProps={timeline}
                 durationInFrames={durationInFrames}
                 fps={VIDEO_FPS}
                 compositionHeight={
-                  mode === "education" ? VIDEO_HEIGHT :
-                    (quizFormat === "single" ? SINGLE_QUIZ_HEIGHT :
+                  mode === "education"
+                    ? (eduMode === "mode2" ? EDU_KIDS_HEIGHT : VIDEO_HEIGHT)
+                    : (quizMode === "single" ? SINGLE_QUIZ_HEIGHT :
                       (orientation === "portrait" ? QUIZ_HEIGHT_PORTRAIT : QUIZ_HEIGHT_LANDSCAPE))
                 }
                 compositionWidth={
-                  mode === "education" ? VIDEO_WIDTH :
-                    (quizFormat === "single" ? SINGLE_QUIZ_WIDTH :
+                  mode === "education"
+                    ? (eduMode === "mode2" ? EDU_KIDS_WIDTH : VIDEO_WIDTH)
+                    : (quizMode === "single" ? SINGLE_QUIZ_WIDTH :
                       (orientation === "portrait" ? QUIZ_WIDTH_PORTRAIT : QUIZ_WIDTH_LANDSCAPE))
                 }
                 style={{
                   maxWidth: "100%",
                   maxHeight: "100%",
                   aspectRatio:
-                    mode === "education" ? "16/9" :
-                      (quizFormat === "single" ? "16/9" :
+                    mode === "education"
+                      ? (eduMode === "mode2" ? `${EDU_KIDS_WIDTH}/${EDU_KIDS_HEIGHT}` : "16/9")
+                      : (quizMode === "single" ? "16/9" :
                         (orientation === "portrait" ? "9/16" : "16/9"))
                 }}
                 controls
@@ -959,14 +1060,14 @@ const Home: NextPage = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         {slide.type === "intro" && <span className="text-xs font-bold uppercase tracking-wider text-fuchsia-400 bg-fuchsia-400/10 px-2 py-0.5 rounded">Intro</span>}
-                        {slide.type === "outro" && <span className="text-xs font-bold uppercase tracking-wider text-fuchsia-400 bg-fuchsia-400/10 px-2 py-0.5 rounded">Outro</span>}
-                        {slide.type === "text" && <span className="text-xs font-bold uppercase tracking-wider text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded">Text</span>}
-                        {slide.type === "bullets" && <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded">Bullets</span>}
+                        {slide.type === "outro" && (slide.title || slide.callToAction || "End")}
+                        {slide.type === "text" && slide.text}
+                        {slide.type === "bullets" && (slide.title || slide.bullets[0])}
                         {slide.type === "diagram" && <span className="text-xs font-bold uppercase tracking-wider text-orange-400 bg-orange-400/10 px-2 py-0.5 rounded">Diagram</span>}
                         {slide.type === "image" && <span className="text-xs font-bold uppercase tracking-wider text-cyan-400 bg-cyan-400/10 px-2 py-0.5 rounded">Image</span>}
                         {slide.type === "lottie" && <span className="text-xs font-bold uppercase tracking-wider text-yellow-400 bg-yellow-400/10 px-2 py-0.5 rounded">Lottie</span>}
                         {slide.type === "threeD" && <span className="text-xs font-bold uppercase tracking-wider text-red-400 bg-red-400/10 px-2 py-0.5 rounded">3D</span>}
-                        {slide.type === "quiz" && <span className="text-xs font-bold uppercase tracking-wider text-indigo-400 bg-indigo-400/10 px-2 py-0.5 rounded">Quiz</span>}
+                        {slide.type === "dualQuiz" && <span className="text-xs font-bold uppercase tracking-wider text-indigo-400 bg-indigo-400/10 px-2 py-0.5 rounded">Quiz</span>}
                         {slide.type === "singleQuiz" && <span className="text-xs font-bold uppercase tracking-wider text-violet-400 bg-violet-400/10 px-2 py-0.5 rounded">Single Quiz</span>}
 
                         <span className="text-xs text-slate-500 font-mono">
@@ -983,7 +1084,7 @@ const Home: NextPage = () => {
                         {slide.type === "image" && (slide.imageQuery || "Visual")}
                         {slide.type === "lottie" && `Animation: ${slide.animationType}`}
                         {slide.type === "threeD" && `3D Model`}
-                        {slide.type === "quiz" && (slide.question)}
+                        {slide.type === "dualQuiz" && (slide.question)}
                         {slide.type === "singleQuiz" && (slide.question || slide.options.join(", "))}
                       </p>
                     </div>
@@ -1024,8 +1125,9 @@ const Home: NextPage = () => {
             </h2>
             <LocalRenderControls
               compositionId={
-                mode === "education" ? EDU_COMP_NAME :
-                  (quizFormat === "single" ? SINGLE_QUIZ_COMP :
+                mode === "education"
+                  ? (eduMode === "mode2" ? EDU_KIDS_COMP_NAME : EDU_COMP_NAME)
+                  : (quizMode === "single" ? SINGLE_QUIZ_COMP :
                     (orientation === "portrait" ? QUIZ_COMP_PORTRAIT : QUIZ_COMP_LANDSCAPE))
               }
               inputProps={timeline}

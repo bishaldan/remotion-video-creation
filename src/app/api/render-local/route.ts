@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
     // Generate unique render ID
     const renderId = `render-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    
+
     // Initialize progress
     renderProgress.set(renderId, { progress: 0, status: "bundling" });
 
@@ -55,9 +55,9 @@ async function renderInBackground(renderId: string, compositionId: string, input
       entryPoint: path.join(process.cwd(), "src/remotion/index.ts"),
       publicDir: path.join(process.cwd(), "public"),
       onProgress: (progress) => {
-        renderProgress.set(renderId, { 
-          progress: 0.05 + (progress / 100) * 0.15, 
-          status: "bundling" 
+        renderProgress.set(renderId, {
+          progress: 0.05 + (progress / 100) * 0.15,
+          status: "bundling"
         });
       },
     });
@@ -69,7 +69,7 @@ async function renderInBackground(renderId: string, compositionId: string, input
       serveUrl: bundleLocation,
       id: compositionId,
       inputProps: inputProps as Record<string, unknown>,
-      chromiumOptions: { gl: "swangle" },
+      chromiumOptions: { gl: "angle" },
     });
 
     renderProgress.set(renderId, { progress: 0.25, status: "rendering" });
@@ -81,7 +81,7 @@ async function renderInBackground(renderId: string, compositionId: string, input
       codec: "h264",
       outputLocation: outputPath,
       inputProps: inputProps as Record<string, unknown>,
-      chromiumOptions: { gl: "swangle" }, // Change "swangle" to "angle" if not using docker
+      chromiumOptions: { gl: "angle" }, // Change "swangle" to "angle" if not using docker
       onProgress: ({ progress }) => {
         renderProgress.set(renderId, {
           progress: 0.25 + progress * 0.75,

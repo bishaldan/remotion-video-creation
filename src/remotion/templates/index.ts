@@ -14,3 +14,4 @@ export type { ThreeDShape, ThreeDSlideProps } from "./ThreeDSlide";
 export { DualQuizSlide } from "./QuizSlide";
 export type { QuizSlideProps } from "./QuizSlide";
 
+export { KidsEduSlide } from './KidsEduSlide';

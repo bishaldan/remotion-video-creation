@@ -50,6 +50,10 @@ function cleanTTSText(text: string): string {
     .replace(/_/g, "")
     .replace(/#/g, "")
     .replace(/`+/g, "")
+    // Remove emojis and symbols
+    .replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]|[\uD83C-\uD83E][\uDC00-\uDFFF])/g, "")
+    .replace(/[^\w\s.,?!'-]/g, "") // Remove most other non-word symbols
+    .replace(/\s+/g, " ") // Collapse multiple spaces
     .trim();
 }
 
@@ -105,12 +109,12 @@ async function callTypecastAPI(
     text: cleanTTSText(text),
     model: model,
     language: "eng",
-    prompt: options.emotion === "smart" 
+    prompt: options.emotion === "smart"
       ? { emotion_type: "smart" }
-      : { 
-          emotion_type: "preset",
-          emotion_preset: options.emotion || "normal"
-        },
+      : {
+        emotion_type: "preset",
+        emotion_preset: options.emotion || "normal"
+      },
     output: {
       audio_format: "wav",
       audio_tempo: options.speed || 1.0,
@@ -181,7 +185,7 @@ export async function generateTTS(
   try {
     // Determine model if not provided
     if (!options.model && options.voiceId && TYPECAST_VOICES[options.voiceId]) {
-        options.model = TYPECAST_VOICES[options.voiceId].model;
+      options.model = TYPECAST_VOICES[options.voiceId].model;
     }
 
     if (typeof text === "object" && (text as any).parts) {
@@ -375,9 +379,12 @@ function getNarrationText(slide: any): string | { parts: { text: string; pauseAf
       return slide.caption || slide.imageQuery || "Look at this image.";
     case "lottie":
       return `${slide.title ? slide.title + ". " : ""}${slide.text}`;
-    case "quiz":
+    case "dualQuiz":
     case "singleQuiz":
       return formatQuizNarration(slide);
+    case "kidsContent":
+      // Join all lines into one continuous narration (no silence gaps)
+      return slide.lines.join(". ");
     case "outro":
       return `${slide.title || ""}. ${slide.callToAction || ""}`;
     default:
@@ -409,7 +416,7 @@ export async function setNarrationUrls(
         slide.narrationUrl = result.url;
 
         // For quiz slides: override duration with actual audio length + buffer
-        const isQuiz = slide.type === "quiz" || slide.type === "singleQuiz";
+        const isQuiz = slide.type === "dualQuiz" || slide.type === "singleQuiz";
         if (isQuiz) {
           const audioDuration = result.durationSeconds;
           slide.durationInSeconds = Math.round((audioDuration + 1.5) * 2) / 2;
@@ -417,8 +424,22 @@ export async function setNarrationUrls(
           slide.startFromSeconds = result.questionAndOptionsEndSeconds;
           console.log(`    → Slide ${index}: duration=${slide.durationInSeconds}s, reveal@${slide.revealTimeSeconds?.toFixed(1)}s, startTick@${slide.startFromSeconds?.toFixed(1)}s`);
         }
+
+        // For kidsContent: set duration exactly to audio length (no silence)
+        if (slide.type === "kidsContent") {
+          slide.durationInSeconds = Math.ceil(result.durationSeconds * 2) / 2; // Round up to nearest 0.5s
+          console.log(`    → Kids Slide ${index}: duration=${slide.durationInSeconds}s (from audio)`);
+        }
+
+        // For other narrative slides (intro, outro, etc.): sync duration with audio
+        if (["intro", "outro", "text", "bullets", "diagram", "threeD", "image", "lottie"].includes(slide.type)) {
+          const newDuration = Math.ceil((result.durationSeconds + 1.5) * 2) / 2;
+          slide.durationInSeconds = newDuration;
+          console.log(`    → ${slide.type} Slide ${index}: duration updated to ${slide.durationInSeconds}s (from audio + 1.5s buffer)`);
+        }
       } catch (error) {
         console.error(`Failed to generate TTS for slide ${index}:`, error);
+        throw error; // Propagate error to trigger failure in the API route
       }
     }
   }

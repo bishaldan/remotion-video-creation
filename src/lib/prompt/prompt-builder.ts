@@ -28,7 +28,7 @@ export function buildGeneratePrompt(input: PromptBuilderInput): string {
   if (input.pdfText) {
     const title = input.pdfMetadata?.title || "Untitled";
     const pageCount = input.pdfMetadata?.pageCount || 0;
-    
+
     let prompt = `You are generating an educational video timeline based on the following PDF document.
 
 PDF Title: ${title}
@@ -50,12 +50,12 @@ Create an educational video timeline that covers the key concepts from this docu
 
     return prompt;
   }
-  
+
   // Text-only mode (existing behavior)
   if (input.userPrompt) {
     return `Create an educational video timeline for the topic: "${input.userPrompt}"`;
   }
-  
+
   // No input provided - should not happen in normal flow
   throw new Error("Either pdfText or userPrompt must be provided");
 }
@@ -87,7 +87,7 @@ Return the modified JSON object.`;
 
 export interface PromptResult {
   prompt: string;
-  mode: "normal" | "quiz" | "singleQuiz";
+  mode: "normal" | "dualQuiz" | "singleQuiz" | "educationKids";
   orientation: "landscape" | "portrait";
   voiceType: "kokoro" | "typecast";
   voiceId: string;
@@ -95,141 +95,146 @@ export interface PromptResult {
 
 export const getPrompt = async (request: NextRequest, isEdit: boolean = false): Promise<PromptResult> => {
 
-    const contentType = request.headers.get("content-type") || "";
-    
-    let prompt: string; 
-    let pdfText: string | undefined;
-    let pdfMetadata: { title?: string; pageCount: number } | undefined;
-    
-    // Defaults
-    let mode: "normal" | "quiz" | "singleQuiz" = "normal";
-    let orientation: "landscape" | "portrait" = "landscape";
-    let voiceType: "kokoro" | "typecast" = "kokoro";
-    let voiceId = "af_bella";
+  const contentType = request.headers.get("content-type") || "";
 
-    if(contentType.includes("multipart/form-data")){
-      const formData = await request.formData();
-      const pdfFile = formData.get("pdf") as File | null;
-      const userPrompt = formData.get("prompt") as string | null;
-      const modeParam = formData.get("mode") as string | null;
-      const orientationParam = formData.get("orientation") as string | null;
-      const voiceTypeParam = formData.get("voiceType") as string | null;
-      const voiceIdParam = formData.get("voiceId") as string | null;
+  let prompt: string;
+  let pdfText: string | undefined;
+  let pdfMetadata: { title?: string; pageCount: number } | undefined;
 
-      if (modeParam === "quiz") mode = "quiz";
-      if (modeParam === "singleQuiz") mode = "singleQuiz";
-      if (orientationParam === "portrait") orientation = "portrait";
-      
-      // Voice params
-      if (voiceTypeParam === "typecast") voiceType = "typecast";
-      if (voiceIdParam) voiceId = voiceIdParam;
-      
-      // Validate that either PDF or prompt is provided (or just timeline for edit?)
-      if (!pdfFile && !userPrompt) {
-        throw new Error("Please provide either a PDF file or text prompt");
-      }
-      
-      // If PDF is present, extract its content
-      if (pdfFile) {
-        // ... (existing PDF extraction logic remains same)
-        const MAX_FILE_SIZE = 10 * 1024 * 1024;
-        if (pdfFile.size > MAX_FILE_SIZE) {
-          throw new Error("File size exceeds 10MB limit");
-        }
-        
-        const arrayBuffer = await pdfFile.arrayBuffer();
-        
-        try {
-          const extractedContent = await extractPDFContent(arrayBuffer);
-          pdfText = extractedContent.text;
-          pdfMetadata = {
-            title: extractedContent.metadata.title,
-            pageCount: extractedContent.metadata.pageCount,
-          };
-        } catch (extractionError) {
-          console.error("PDF extraction error:", extractionError);
-          throw new Error(extractionError instanceof Error ? extractionError.message : "Failed to extract PDF content");
-        }
+  // Defaults
+  let mode: "normal" | "dualQuiz" | "singleQuiz" | "educationKids" = "normal";
+  let orientation: "landscape" | "portrait" = "landscape";
+  let voiceType: "kokoro" | "typecast" = "kokoro";
+  let voiceId = "am_santa";
+
+  if (contentType.includes("multipart/form-data")) {
+    const formData = await request.formData();
+    const pdfFile = formData.get("pdf") as File | null;
+    const userPrompt = formData.get("prompt") as string | null;
+    const modeParam = formData.get("mode") as string | null;
+    const orientationParam = formData.get("orientation") as string | null;
+    const voiceTypeParam = formData.get("voiceType") as string | null;
+    const voiceIdParam = formData.get("voiceId") as string | null;
+
+    if (modeParam === "dualQuiz") mode = "dualQuiz";
+    if (modeParam === "singleQuiz") mode = "singleQuiz";
+    if (modeParam === "educationKids") mode = "educationKids";
+    if (orientationParam === "portrait") orientation = "portrait";
+
+    // Voice params
+    if (voiceTypeParam === "typecast") voiceType = "typecast";
+    if (voiceIdParam) voiceId = voiceIdParam;
+
+    // Validate that either PDF or prompt is provided (or just timeline for edit?)
+    if (!pdfFile && !userPrompt) {
+      throw new Error("Please provide either a PDF file or text prompt");
+    }
+
+    // If PDF is present, extract its content
+    if (pdfFile) {
+      // ... (existing PDF extraction logic remains same)
+      const MAX_FILE_SIZE = 10 * 1024 * 1024;
+      if (pdfFile.size > MAX_FILE_SIZE) {
+        throw new Error("File size exceeds 10MB limit");
       }
 
-      if (isEdit) {
-        const timelineJson = formData.get("timeline") as string | null;
-        if (!timelineJson) {
-           throw new Error("Timeline is required for editing");
-        }
-        let timeline;
-        try {
-            timeline = JSON.parse(timelineJson);
-            // Preserve mode/orientation from existing timeline if not explicitly overridden (though edit usually preserves)
-            if (timeline.mode) mode = timeline.mode;
-            if (timeline.orientation) orientation = timeline.orientation;
-        } catch (e) {
-            throw new Error("Invalid timeline JSON");
-        }
+      const arrayBuffer = await pdfFile.arrayBuffer();
 
-        let fullInstruction = userPrompt || "Edit the video based on the provided document.";
-        if (pdfText) {
-            fullInstruction += `\n\nReference Document Context:\n${pdfText}`;
-        }
-        prompt = buildEditPrompt(timeline, fullInstruction);
-        return { prompt, mode, orientation, voiceType, voiceId };
-      }
-      
-      // Build prompt using the prompt builder utility
-      prompt = buildGeneratePrompt({
-        pdfText,
-        pdfMetadata,
-        userPrompt: userPrompt || undefined,
-      });  
-
-      // For quiz mode, modify the prompt slightly to ensure context
-      if (mode === "quiz") {
-        prompt = `Create a quiz video about: ${userPrompt || (pdfMetadata ? pdfMetadata.title : "the content")}. ${prompt}`;
-      }
-
-      return { prompt, mode, orientation, voiceType, voiceId };
-
-    } else {
-      // Handle JSON request
-      const body = await request.json();
-      
-      if (body.mode === "quiz") mode = "quiz";
-      if (body.mode === "singleQuiz") mode = "singleQuiz";
-      if (body.orientation === "portrait") orientation = "portrait";
-
-      // Voice params
-      if (body.voiceType === "typecast") voiceType = "typecast";
-      if (body.voiceId) voiceId = body.voiceId;
-
-      if (isEdit) {
-         const { timeline, editPrompt } = body;
-         if (!timeline || !editPrompt) {
-            throw new Error("Timeline and editPrompt are required");
-         }
-         
-         // Preserve existing mode/orientation from timeline
-         if (timeline.mode) mode = timeline.mode;
-         if (timeline.orientation) orientation = timeline.orientation;
-
-         prompt = buildEditPrompt(timeline, editPrompt);
-         return { prompt, mode, orientation, voiceType, voiceId };
-      }
-
-      const userPrompt = body.prompt;
-      if (!userPrompt || typeof userPrompt !== "string") {
-        throw new Error("Prompt is required");
-      }
-      
-      // Build prompt for text-only mode
-      prompt = buildGeneratePrompt({ userPrompt });
-
-      if (mode === "quiz") {
-        prompt = `Create a quiz video about: ${userPrompt}. ${prompt}`;
-      }
-      if (mode === "singleQuiz") {
-        prompt = `Create a general knowledge quiz about: ${userPrompt}. ${prompt}`;
+      try {
+        const extractedContent = await extractPDFContent(arrayBuffer);
+        pdfText = extractedContent.text;
+        pdfMetadata = {
+          title: extractedContent.metadata.title,
+          pageCount: extractedContent.metadata.pageCount,
+        };
+      } catch (extractionError) {
+        console.error("PDF extraction error:", extractionError);
+        throw new Error(extractionError instanceof Error ? extractionError.message : "Failed to extract PDF content");
       }
     }
-      
+
+    if (isEdit) {
+      const timelineJson = formData.get("timeline") as string | null;
+      if (!timelineJson) {
+        throw new Error("Timeline is required for editing");
+      }
+      let timeline;
+      try {
+        timeline = JSON.parse(timelineJson);
+        // Preserve mode/orientation from existing timeline if not explicitly overridden (though edit usually preserves)
+        if (timeline.mode) mode = timeline.mode;
+        if (timeline.orientation) orientation = timeline.orientation;
+      } catch (e) {
+        throw new Error("Invalid timeline JSON");
+      }
+
+      let fullInstruction = userPrompt || "Edit the video based on the provided document.";
+      if (pdfText) {
+        fullInstruction += `\n\nReference Document Context:\n${pdfText}`;
+      }
+      prompt = buildEditPrompt(timeline, fullInstruction);
+      return { prompt, mode, orientation, voiceType, voiceId };
+    }
+
+    // Build prompt using the prompt builder utility
+    prompt = buildGeneratePrompt({
+      pdfText,
+      pdfMetadata,
+      userPrompt: userPrompt || undefined,
+    });
+
+    // For quiz mode, modify the prompt slightly to ensure context
+    if (mode === "dualQuiz") {
+      prompt = `Create a quiz video about: ${userPrompt || (pdfMetadata ? pdfMetadata.title : "the content")}. ${prompt}`;
+    }
+
     return { prompt, mode, orientation, voiceType, voiceId };
+
+  } else {
+    // Handle JSON request
+    const body = await request.json();
+
+    if (body.mode === "dualQuiz") mode = "dualQuiz";
+    if (body.mode === "singleQuiz") mode = "singleQuiz";
+    if (body.mode === "educationKids") mode = "educationKids";
+    if (body.orientation === "portrait") orientation = "portrait";
+
+    // Voice params
+    if (body.voiceType === "typecast") voiceType = "typecast";
+    if (body.voiceId) voiceId = body.voiceId;
+
+    if (isEdit) {
+      const { timeline, editPrompt } = body;
+      if (!timeline || !editPrompt) {
+        throw new Error("Timeline and editPrompt are required");
+      }
+
+      // Preserve existing mode/orientation from timeline
+      if (timeline.mode) mode = timeline.mode;
+      if (timeline.orientation) orientation = timeline.orientation;
+
+      prompt = buildEditPrompt(timeline, editPrompt);
+      return { prompt, mode, orientation, voiceType, voiceId };
+    }
+
+    const userPrompt = body.prompt;
+    if (!userPrompt || typeof userPrompt !== "string") {
+      throw new Error("Prompt is required");
+    }
+
+    // Build prompt for text-only mode
+    prompt = buildGeneratePrompt({ userPrompt });
+
+    if (mode === "dualQuiz") {
+      prompt = `Create a quiz video about: ${userPrompt}. ${prompt}`;
+    }
+    if (mode === "singleQuiz") {
+      prompt = `Create a general knowledge quiz about: ${userPrompt}. ${prompt}`;
+    }
+    if (mode === "educationKids") {
+      prompt = `Create a fun, kid-friendly educational video about: ${userPrompt}. ${prompt}`;
+    }
+  }
+
+  return { prompt, mode, orientation, voiceType, voiceId };
 }

@@ -2,8 +2,8 @@ import { z } from "zod";
 import { IntroSlideSchema, OutroSlideSchema } from "./shared";
 
 // Dual Quiz Mode
-export const QuizQuestionSchema = z.object({
-  type: z.literal("quiz"),
+export const DualQuizQuestionSchema = z.object({
+  type: z.literal("dualQuiz"),
   question: z.string(),
   options: z.array(z.string()).min(2).max(4),
   correctIndex: z.number(),
@@ -17,22 +17,22 @@ export const QuizQuestionSchema = z.object({
 
 export const DualQuizTimelineSchema = z.object({
   title: z.string(),
-  mode: z.literal("quiz"),
+  mode: z.literal("dualQuiz"),
   orientation: z.enum(["landscape", "portrait"]),
   slides: z.array(z.discriminatedUnion("type", [
-    QuizQuestionSchema,
+    DualQuizQuestionSchema,
     IntroSlideSchema,
     OutroSlideSchema,
   ])),
   defaultSlideDuration: z.number().default(7),
 });
 
-export type QuizQuestion = z.infer<typeof QuizQuestionSchema>;
-export type QuizTimeline = z.infer<typeof DualQuizTimelineSchema>;
+export type DualQuizQuestion = z.infer<typeof DualQuizQuestionSchema>;
+export type DualQuizTimeline = z.infer<typeof DualQuizTimelineSchema>;
 
-export const defaultDualQuizTimeline: QuizTimeline = {
+export const defaultDualQuizTimeline: DualQuizTimeline = {
   title: "Solar System Quiz",
-  mode: "quiz",
+  mode: "dualQuiz",
   orientation: "landscape",
   defaultSlideDuration: 5,
   slides: [
@@ -41,39 +41,39 @@ export const defaultDualQuizTimeline: QuizTimeline = {
       title: "Solar System Quiz",
       subtitle: "Test your knowledge!",
       author: "Remotion Quiz",
-      durationInSeconds: 5,
-      narrationUrl: "/audio/kokoro/2026-02-13/Bella/default-dual-quiz/slide-0.wav",
+      durationInSeconds: 4.5,
+      narrationUrl: "/audio/default/typecast-default/2026-02-17/Chester/default-dual-quiz/slide-0.wav",
     },
     {
-      type: "quiz",
+      type: "dualQuiz",
       question: "Which planet is known as the Red Planet?",
       options: ["Venus", "Mars", "Jupiter", "Saturn"],
       correctIndex: 1,
       backgroundQuery: "Mars planet space",
       backgroundUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/OSIRIS_Mars_true_color.jpg/1920px-OSIRIS_Mars_true_color.jpg",
       durationInSeconds: 16.5,
-      revealTimeSeconds: 12.9,
-      startFromSeconds: 8.0,
-      narrationUrl: "/audio/kokoro/2026-02-13/Bella/default-dual-quiz/slide-1.wav",
+      revealTimeSeconds: 12.6,
+      startFromSeconds: 7.6,
+      narrationUrl: "/audio/default/typecast-default/2026-02-17/Chester/default-dual-quiz/slide-1.wav",
     },
     {
-      type: "quiz",
+      type: "dualQuiz",
       question: "What is the largest planet in our solar system?",
       options: ["Earth", "Jupiter", "Uranus", "Neptune"],
       correctIndex: 1,
       backgroundQuery: "Jupiter planet space",
       backgroundUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Jupiter.jpg/1920px-Jupiter.jpg",
       durationInSeconds: 17.5,
-      revealTimeSeconds: 13.6,
-      startFromSeconds: 8.6,
-      narrationUrl: "/audio/kokoro/2026-02-13/Bella/default-dual-quiz/slide-2.wav",
+      revealTimeSeconds: 13.0,
+      startFromSeconds: 8.0,
+      narrationUrl: "/audio/default/typecast-default/2026-02-17/Chester/default-dual-quiz/slide-2.wav",
     },
     {
       type: "outro",
       title: "Great Job!",
       callToAction: "Follow for more quizzes",
-      durationInSeconds: 3,
-      narrationUrl: "/audio/kokoro/2026-02-13/Bella/default-dual-quiz/slide-3.wav",
+      durationInSeconds: 4.5,
+      narrationUrl: "/audio/default/typecast-default/2026-02-17/Chester/default-dual-quiz/slide-3.wav",
     }
   ],
 };
@@ -130,7 +130,7 @@ export const defaultSingleQuizTimeline: SingleQuizTimeline = {
       author: "QuizMaster",
       backgroundColor: "#1a1a2e",
       durationInSeconds: 5,
-      narrationUrl: "/audio/kokoro/2026-02-13/Bella/default-single-quiz/slide-0.wav",
+      narrationUrl: "/audio/default/typecast-default/2026-02-17/Nia/default-single-quiz/slide-0.wav",
     },
     {
       type: "singleQuiz",
@@ -140,10 +140,10 @@ export const defaultSingleQuizTimeline: SingleQuizTimeline = {
       imageQuery: "tooth enamel",
       imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Blausen_0863_ToothAnatomy_02.png/800px-Blausen_0863_ToothAnatomy_02.png",
       backgroundColor: SINGLE_QUIZ_COLORS[0],
-      durationInSeconds: 18.5,
-      revealTimeSeconds: 15.05,
-      startFromSeconds: 10.05,
-      narrationUrl: "/audio/kokoro/2026-02-13/Bella/default-single-quiz/slide-1.wav",
+      durationInSeconds: 20,
+      revealTimeSeconds: 16.5,
+      startFromSeconds: 11.5,
+      narrationUrl: "/audio/default/typecast-default/2026-02-17/Nia/default-single-quiz/slide-1.wav",
     },
     {
       type: "singleQuiz",
@@ -153,18 +153,18 @@ export const defaultSingleQuizTimeline: SingleQuizTimeline = {
       imageQuery: "Mercury planet",
       imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Mercury_in_color_-_Prockter07-edit1.jpg/800px-Mercury_in_color_-_Prockter07-edit1.jpg",
       backgroundColor: SINGLE_QUIZ_COLORS[1],
-      durationInSeconds: 17.5,
-      revealTimeSeconds: 13.75,
-      startFromSeconds: 8.75,
-      narrationUrl: "/audio/kokoro/2026-02-13/Bella/default-single-quiz/slide-2.wav",
+      durationInSeconds: 19,
+      revealTimeSeconds: 15.5,
+      startFromSeconds: 10.5,
+      narrationUrl: "/audio/default/typecast-default/2026-02-17/Nia/default-single-quiz/slide-2.wav",
     },
     {
       type: "outro",
       title: "Great Job!",
       callToAction: "How many did you get right? Share your score!",
       backgroundColor: "#1a1a2e",
-      durationInSeconds: 5,
-      narrationUrl: "/audio/kokoro/2026-02-13/Bella/default-single-quiz/slide-3.wav",
+      durationInSeconds: 6.5,
+      narrationUrl: "/audio/default/typecast-default/2026-02-17/Nia/default-single-quiz/slide-3.wav",
     },
   ],
 };

@@ -47,17 +47,17 @@ export const DualQuizSlide: React.FC<QuizSlideProps> = ({
   console.log("==================THIS IS DUAL QUIZ==================", startFromSeconds);
 
   // Answer reveal: use exact audio timestamp if available, else fallback to 89%
-  const revealFrame = revealTimeSeconds 
-    ? revealTimeSeconds * fps 
+  const revealFrame = revealTimeSeconds
+    ? revealTimeSeconds * fps
     : (durationInSeconds * 0.89) * fps;
-  
+
   // Background Image with Ken Burns
   const progress = frame / (durationInSeconds * fps);
   const scale = interpolate(progress, [0, 1], [1, 1.15]);
-  
+
   // Use resolved URL or fallback to source.unsplash
   // Note: backgroundUrl might be undefined initially if not resolved yet
-  const bgImage = backgroundUrl || 
+  const bgImage = backgroundUrl ||
     (backgroundQuery ? `https://source.unsplash.com/${width}x${height}/?${encodeURIComponent(backgroundQuery)}` : null);
 
   // Question Animation (Slide down + fade in)
@@ -66,28 +66,30 @@ export const DualQuizSlide: React.FC<QuizSlideProps> = ({
     frame: frame - 10,
     config: { damping: 20, stiffness: 100 },
   });
-  
+
   const questionY = interpolate(questionSpring, [0, 1], [-50, 0]);
+
+  const isPortrait = height > width;
 
   // Render options
   const renderOption = (option: string, index: number) => {
     // Stagger animations: 0.2s between each option
-    const delay = 30 + (index * 10); 
-    
+    const delay = 30 + (index * 10);
+
     // Entrance animation
     const optionSpring = spring({
       fps,
       frame: frame - delay,
       config: { damping: 15, stiffness: 120 },
     });
-    
+
     const optionX = interpolate(optionSpring, [0, 1], [-50, 0]);
-    
+
     // Reveal animation (only for correct/incorrect logic)
     // Reveal logic: If frame >= revealFrame
     const isRevealed = frame >= revealFrame;
     const isCorrect = index === correctIndex;
-    
+
     // Base colors
     const baseBgColor = "rgba(255, 255, 255, 0.15)";
     const baseBorderColor = "rgba(255, 255, 255, 0.3)";
@@ -100,14 +102,14 @@ export const DualQuizSlide: React.FC<QuizSlideProps> = ({
 
     // Pop animation when revealing answer
     const popSpring = spring({
-        fps,
-        frame: frame - revealFrame,
-        config: { damping: 10, stiffness: 200 }
+      fps,
+      frame: frame - revealFrame,
+      config: { damping: 10, stiffness: 200 }
     });
 
-    const revealScale = isRevealed && isCorrect 
-        ? interpolate(popSpring, [0, 1], [1, 1.05]) 
-        : 1;
+    const revealScale = isRevealed && isCorrect
+      ? interpolate(popSpring, [0, 1], [1, 1.05])
+      : 1;
 
     // Interpolate colors based on popSpring
     // We use popSpring as the progress driver (0 -> 1) once revealed
@@ -119,39 +121,43 @@ export const DualQuizSlide: React.FC<QuizSlideProps> = ({
       <div
         key={index}
         style={{
-            position: 'relative',
-            width: '100%',
-            backgroundColor: bgColor,
-            border: `2px solid ${borderColor}`,
-            borderRadius: 16,
-            padding: '16px 24px',
-            marginBottom: 12,
-            opacity: optionSpring,
-            transform: `translateX(${optionX}px) scale(${revealScale})`,
-            display: 'flex',
-            alignItems: 'center',
-            cursor: 'default',
-            boxShadow: isRevealed && isCorrect ? '0 0 30px rgba(34, 197, 94, 0.4)' : 'none',
+          position: 'relative',
+          width: '100%',
+          backgroundColor: bgColor,
+          border: `2px solid ${borderColor}`,
+          borderRadius: 16,
+          padding: isPortrait ? '28px 40px' : '16px 24px', // Much larger padding for portrait visibility
+          marginBottom: 12,
+          opacity: optionSpring,
+          transform: `translateX(${optionX}px) scale(${revealScale})`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-start', // Left-aligned
+          cursor: 'default',
+          boxShadow: isRevealed && isCorrect ? '0 0 30px rgba(34, 197, 94, 0.4)' : 'none',
         }}
       >
-        <span style={{ 
-            fontFamily, 
-            fontWeight: 800, 
-            color: isRevealed && isCorrect ? '#ffffff' : 'rgba(255,255,255,0.7)',
-            marginRight: 16,
-            fontSize: 20,
-            width: 24,
+        <span style={{
+          fontFamily,
+          fontWeight: 800,
+          color: isRevealed && isCorrect ? '#ffffff' : 'rgba(255,255,255,0.7)',
+          marginRight: 20,
+          fontSize: isPortrait ? 36 : 20, // Huge letter for portrait
+          width: isPortrait ? 40 : 24, // Fixed width for alignment
+          textAlign: 'center',
         }}>
-            {String.fromCharCode(65 + index)}
+          {String.fromCharCode(65 + index)}
         </span>
-        <span style={{ 
-            fontFamily, 
-            fontWeight: 600, 
-            color: textColor, 
-            fontSize: 22,
-            flex: 1
+        <span style={{
+          fontFamily,
+          fontWeight: 600,
+          color: textColor,
+          fontSize: isPortrait ? 42 : 22, // Huge text for portrait readability
+          textAlign: 'left',
+          flex: 1,
+          lineHeight: 1.2
         }}>
-            {option}
+          {option}
         </span>
       </div>
     );
@@ -182,62 +188,62 @@ export const DualQuizSlide: React.FC<QuizSlideProps> = ({
 
       {/* Content Container */}
       <AbsoluteFill style={{
-          padding: 60, // Safe area
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
+        padding: 60, // Safe area
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
       }}>
-        
+
         {/* Question */}
         <div style={{
-            width: '100%',
-            maxWidth: 1000,
-            textAlign: 'center',
-            marginBottom: 60,
-            opacity: questionSpring,
-            transform: `translateY(${questionY}px)`
+          width: '100%',
+          maxWidth: 1000,
+          textAlign: 'center',
+          marginBottom: 60,
+          opacity: questionSpring,
+          transform: `translateY(${questionY}px)`
         }}>
-            <h2 style={{
-                fontFamily,
-                fontSize: 52, // Large readable text
-                fontWeight: 800,
-                color: '#ffffff',
-                lineHeight: 1.2,
-                textShadow: '0 4px 24px rgba(0,0,0,0.8)'
-            }}>
-                {question}
-            </h2>
+          <h2 style={{
+            fontFamily,
+            fontSize: 52, // Large readable text
+            fontWeight: 800,
+            color: '#ffffff',
+            lineHeight: 1.2,
+            textShadow: '0 4px 24px rgba(0,0,0,0.8)'
+          }}>
+            {question}
+          </h2>
         </div>
 
         {/* Options Grid */}
         <div style={{
-            width: '100%',
-            maxWidth: 800, // Constrain width for better readability
-            display: 'flex',
-            flexDirection: 'column',
+          width: '100%',
+          maxWidth: 800, // Constrain width for better readability
+          display: 'flex',
+          flexDirection: 'column',
         }}>
-            {options.map((opt, i) => renderOption(opt, i))}
+          {options.map((opt, i) => renderOption(opt, i))}
         </div>
-        
+
         {/* Timer / Progress bar at bottom */}
         <div style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            height: 8,
-            backgroundColor: '#6366f1',
-            width: `${(frame / (durationInSeconds * fps)) * 100}%`
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          height: 8,
+          backgroundColor: '#6366f1',
+          width: `${(frame / (durationInSeconds * fps)) * 100}%`
         }} />
 
         {narrationUrl && <Html5Audio src={getAudioSrc(narrationUrl)} />}
 
         {/* Quiz Sound Effects */}
         <Sequence from={Math.round((startFromSeconds || 0) * fps)} durationInFrames={Math.max(1, Math.round(revealFrame - 0.25 * fps) - Math.round((startFromSeconds || 0) * fps))}>
-          <Html5Audio src={staticFile("audio/sfx/clock/tick.mp3")} loop volume={0.3} />
+          <Html5Audio src={staticFile("audio/default/sfx/clock/tick.mp3")} loop volume={0.3} />
         </Sequence>
         <Sequence from={Math.round(revealFrame)} durationInFrames={Math.round(1.5 * fps)}>
-          <Html5Audio src={staticFile("audio/sfx/clock/correct.mp3")} volume={0.6} />
+          <Html5Audio src={staticFile("audio/default/sfx/clock/correct.mp3")} volume={0.6} />
         </Sequence>
       </AbsoluteFill>
     </AbsoluteFill>
