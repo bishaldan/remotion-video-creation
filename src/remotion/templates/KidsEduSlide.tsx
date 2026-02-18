@@ -182,9 +182,8 @@ export const KidsEduSlide: React.FC<KidsEduSlideProps> = ({
             {/* ════════ TEXT LAYER ════════ */}
             <AbsoluteFill
                 style={{
-                    justifyContent: "flex-end",
+                    justifyContent: "center",
                     alignItems: "center",
-                    paddingBottom: 160,
                     paddingLeft: 40,
                     paddingRight: 40,
                     zIndex: 10,
