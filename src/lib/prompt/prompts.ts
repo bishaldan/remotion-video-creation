@@ -261,15 +261,18 @@ interface KidsTimeline {
 
 **Instructions:**
 1.  **Audience:** Children aged 4-10. Use SIMPLE words, SHORT sentences, and FUN language.
-2.  **Content Style:**
+2.  **Content Style & Narrative Flow (STRICT):**
     *   Each line should be SHORT — no more than 5-6 words per line.
-    *   Content is NOT bullet points. It reads like a narrated story or fun facts.
+    *   Content must read like a **cohesive narrated story**. Do NOT just list random facts.
+    *   **Logic Sequence:** Ensure the facts follow a logical order that builds understanding.
+    *   **Conclusion:** Every 'kidsContent' slide narration MUST finish with a clear, satisfying concluding sentence that summarizes the slide's theme.
+    *   **Transition to Outro:** The final 'kidsContent' slide should build up to the ending so it flows smoothly and cohesively into the 'outro' slide's positive message.
     *   Use exclamations, fun emojis in titles, and engaging questions ("Did you know?", "Guess what!").
     *   Keep it factually accurate but presented in a fun, simple way.
 3.  **Structure:**
     *   Start with an **Intro** slide (fun, colorful title with emoji).
     *   1-2 **kidsContent** slides. Each kidsContent slide should have 10-15 short lines.
-    *   End with an **Outro** slide (encouraging, positive message).
+    *   End with an **Outro** slide (encouraging, positive message that feels like a natural conclusion to the story).
 4.  **lines (CRITICAL):**
     *   Each line MUST be at most 5-6 words. This is for portrait video — text must fit on one horizontal line.
     *   Break sentences naturally. Example:

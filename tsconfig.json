@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es6",
     "lib": [
       "dom",
       "dom.iterable",
@@ -31,8 +31,9 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "remotion/webpack-override.mjs",
-    ".next/dev/types/**/*.ts"
-, "src/lib/kokoro-tester.js"  ],
+    ".next/dev/types/**/*.ts",
+    "src/lib/kokoro-tester.js"
+  ],
   "exclude": [
     "node_modules",
     "remotion.config.ts"

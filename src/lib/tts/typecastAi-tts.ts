@@ -50,6 +50,10 @@ function cleanTTSText(text: string): string {
     .replace(/_/g, "")
     .replace(/#/g, "")
     .replace(/`+/g, "")
+    // Remove emojis and symbols
+    .replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]|[\uD83C-\uD83E][\uDC00-\uDFFF])/g, "")
+    .replace(/[^\w\s.,?!'-]/g, "") // Remove most other non-word symbols
+    .replace(/\s+/g, " ") // Collapse multiple spaces
     .trim();
 }
 
@@ -435,6 +439,7 @@ export async function setNarrationUrls(
         }
       } catch (error) {
         console.error(`Failed to generate TTS for slide ${index}:`, error);
+        throw error; // Propagate error to trigger failure in the API route
       }
     }
   }
