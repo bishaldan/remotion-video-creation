@@ -291,7 +291,7 @@ export async function setNarrationUrls(
   const voiceName = KOKORO_VOICES[voiceId]?.name || voiceId;
   const folderName = buildFolderName(prompt, voiceName);
   // Default speed set to 1.1 for slightly faster, more engaging narration (viral style)
-  const options: KokoroOptions = { voice: voiceId, speed: 0.75 };
+  const options: KokoroOptions = { voice: voiceId, speed: 0.8 };
   console.log(`Generating Local Kokoro narration (voice: ${voiceName}, speed: ${options.speed}) → /audio/${folderName}/`);
 
   for (let index = 0; index < timeline.slides.length; index++) {

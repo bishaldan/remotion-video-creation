@@ -11,7 +11,6 @@
 import path from "path";
 import fs from "fs";
 import type { Caption } from "@remotion/captions";
-
 const WHISPER_DIR = path.join(process.cwd(), "whisper.cpp");
 const WHISPER_MODEL = "medium.en";
 const WHISPER_VERSION = "1.5.5";
@@ -144,6 +143,58 @@ function convertTo16kHz(inputPath: string): string {
 }
 
 /**
+ * Post-processes captions to fix word splitting and punctuation alignment.
+ * - Merges tokens that don't start with a space into the previous token (split words).
+ * - Merges punctuation tokens into the previous word token.
+ */
+function postProcessCaptions(captions: Caption[]): Caption[] {
+    if (captions.length === 0) return [];
+
+    const processed: Caption[] = [];
+
+    // Filter out common Whisper noise patterns and markers
+    const filtered = captions.filter(c => {
+        const t = c.text.trim();
+        // 1. Noise markers like [BLANK_AUDIO], [MUSIC], [LAUGHTER], (Music)
+        if (t.startsWith("[") && t.endsWith("]")) return false;
+        if (t.startsWith("(") && t.endsWith(")")) return false;
+        // 2. Junk tokens that are just a single dot or punctuation marks without preceding text
+        if (t === "." || t === "..." || t === ".." || t === "," || t === "") return false;
+        // 3. Explicit noise words that Whisper sometimes hallucinates
+        if (t.toLowerCase().includes("blank_audio")) return false;
+
+        return true;
+    });
+
+    for (const current of filtered) {
+        if (processed.length === 0) {
+            processed.push({ ...current });
+            continue;
+        }
+
+        const last = processed[processed.length - 1];
+        const text = current.text;
+
+        // Merge logic:
+        // 1. If current text doesn't start with a space (Whisper often puts spaces before words),
+        //    it's likely a suffix or part of the previous word (e.g., "war" + "ms").
+        // 2. If current text is just punctuation (.,!?;:), merge it.
+        const isPunctuation = /^[.,!?;:]+$/.test(text.trim());
+        const isSplitWord = !text.startsWith(" ") && !isPunctuation;
+
+        if (isSplitWord || isPunctuation) {
+            last.text += text;
+            last.endMs = Math.max(last.endMs, current.endMs);
+            // Keep the last timestamp or update if needed? usually endMs update is enough for highlighting
+        } else {
+            processed.push({ ...current });
+        }
+    }
+
+    return processed;
+}
+
+/**
  * Transcribes an audio file and returns word-level Caption[] data.
  *
  * @param audioPath - Absolute path to the WAV file (any sample rate)
@@ -168,9 +219,12 @@ export async function transcribeAudio(audioPath: string): Promise<Caption[]> {
         });
 
         // Convert whisper output to Caption[] format
-        const { captions } = toCaptions({ whisperCppOutput: whisperOutput });
+        const { captions: rawCaptions } = toCaptions({ whisperCppOutput: whisperOutput });
 
-        console.log(`  ✅ Transcription complete: ${captions.length} caption tokens`);
+        // Post-process to fix splits and punctuation
+        const captions = postProcessCaptions(rawCaptions);
+
+        console.log(`  ✅ Transcription complete: ${captions.length} caption tokens (merged from ${rawCaptions.length})`);
         return captions;
     } finally {
         // Clean up the 16kHz temp file

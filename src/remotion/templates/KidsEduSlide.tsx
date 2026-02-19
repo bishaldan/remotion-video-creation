@@ -81,14 +81,15 @@ export const KidsEduSlide: React.FC<KidsEduSlideProps> = ({
     let displayWords: { text: string; startFrame: number; endFrame: number }[] = [];
     let currentLocalIndex = -1;
     let lineStartFrame = 0;
+    let activePage: any = null;
 
     if (captions && pages.length > 0) {
         // ─── A. Whisper Algo ───
         const currentTimeMs = (frame / fps) * 1000;
-        const activePage = pages.find((p) => currentTimeMs >= p.startMs && currentTimeMs < (p.startMs + p.durationMs));
+        activePage = pages.find((p) => currentTimeMs >= p.startMs && currentTimeMs < (p.startMs + p.durationMs)) || null;
 
         if (activePage) {
-            displayWords = activePage.tokens.map((t) => ({
+            displayWords = activePage.tokens.map((t: any) => ({
                 text: t.text,
                 startFrame: (t.fromMs / 1000) * fps,
                 endFrame: (t.toMs / 1000) * fps,
@@ -117,7 +118,7 @@ export const KidsEduSlide: React.FC<KidsEduSlideProps> = ({
         const totalChars = flatWords.reduce((sum, w) => sum + w.length, 0);
 
         // Calculate timing frames for all words (only if needed)
-        const wordTimingFrames = [];
+        const wordTimingFrames: { start: number; end: number }[] = [];
         if (totalChars > 0) {
             let cumulative = 0;
             for (const word of flatWords) {
@@ -175,6 +176,13 @@ export const KidsEduSlide: React.FC<KidsEduSlideProps> = ({
                 endFrame: tf?.end ?? 0,
             };
         });
+
+        if (displayWords.length > 0) {
+            activePage = {
+                startMs: (displayWords[0].startFrame / fps) * 1000,
+                durationMs: ((displayWords[displayWords.length - 1].endFrame - displayWords[0].startFrame) / fps) * 1000
+            };
+        }
     }
 
     // ─── Background Image Cycling ──────────────────────────────────────
@@ -257,45 +265,65 @@ export const KidsEduSlide: React.FC<KidsEduSlideProps> = ({
                 }}
             >
                 {/* Glassmorphism pill container */}
-                <div
-                    style={{
-                        backgroundColor: "rgba(0, 0, 0, 0.45)",
-                        backdropFilter: "blur(12px)",
-                        WebkitBackdropFilter: "blur(12px)",
-                        borderRadius: 24,
-                        padding: "28px 36px",
-                        border: "1px solid rgba(255, 255, 255, 0.12)",
-                        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
-                        maxWidth: "95%",
-                    }}
-                >
+                {activePage && (
                     <div
                         style={{
-                            fontFamily,
-                            fontSize: 76,
-                            fontWeight: 800,
-                            textAlign: "center",
-                            display: "flex",
-                            flexWrap: "wrap",
-                            justifyContent: "center",
-                            gap: "12px 14px",
-                            lineHeight: 1.2,
+                            backgroundColor: "rgba(0, 0, 0, 0.45)",
+                            backdropFilter: "blur(12px)",
+                            WebkitBackdropFilter: "blur(12px)",
+                            borderRadius: 24,
+                            padding: "28px 36px",
+                            border: "1px solid rgba(255, 255, 255, 0.12)",
+                            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+                            maxWidth: "95%",
+                            // Smooth entrance/exit
+                            opacity: interpolate(
+                                (frame / fps) * 1000,
+                                [
+                                    activePage.startMs,
+                                    activePage.startMs + 150,
+                                    activePage.startMs + activePage.durationMs - 150,
+                                    activePage.startMs + activePage.durationMs
+                                ],
+                                [0, 1, 1, 0],
+                                { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+                            ),
+                            transform: `scale(${interpolate(
+                                (frame / fps) * 1000,
+                                [activePage.startMs, activePage.startMs + 300],
+                                [0.9, 1],
+                                { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+                            )})`,
                         }}
                     >
-                        {displayWords.map((wordObj, i) => (
-                            <AnimatedWord
-                                key={`${i}-${wordObj.text}`}
-                                word={wordObj.text}
-                                isActive={i === currentLocalIndex}
-                                isPast={i < currentLocalIndex}
-                                isFuture={i > currentLocalIndex}
-                                wordStartFrame={wordObj.startFrame}
-                                lineEntranceFrame={lineStartFrame}
-                                wordIndex={i}
-                            />
-                        ))}
+                        <div
+                            style={{
+                                fontFamily,
+                                fontSize: 76,
+                                fontWeight: 800,
+                                textAlign: "center",
+                                display: "flex",
+                                flexWrap: "wrap",
+                                justifyContent: "center",
+                                gap: "12px 14px",
+                                lineHeight: 1.2,
+                            }}
+                        >
+                            {displayWords.map((wordObj, i) => (
+                                <AnimatedWord
+                                    key={`${i}-${wordObj.text}`}
+                                    word={wordObj.text}
+                                    isActive={i === currentLocalIndex}
+                                    isPast={i < currentLocalIndex}
+                                    isFuture={i > currentLocalIndex}
+                                    wordStartFrame={wordObj.startFrame}
+                                    lineEntranceFrame={lineStartFrame}
+                                    wordIndex={i}
+                                />
+                            ))}
+                        </div>
                     </div>
-                </div>
+                )}
             </AbsoluteFill>
 
             {/* ════════ AUDIO ════════ */}

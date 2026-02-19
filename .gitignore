@@ -60,5 +60,5 @@ public/audio/*
 
 # Typecast: un-ignore folder, ignore content, re-allow default
 !public/audio/typecast/default/
-whisper.cpp
+/whisper.cpp/
 
