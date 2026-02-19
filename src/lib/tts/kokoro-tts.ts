@@ -1,6 +1,7 @@
 import fs from "fs";
 import { KokoroTTS } from "kokoro-js";
 import path from "path";
+import { transcribeAudio } from "./whisper-transcribe";
 
 // Kokoro Configuration
 const MODEL_ID = "onnx-community/Kokoro-82M-v1.0-ONNX";
@@ -79,6 +80,8 @@ async function getTTSModel() {
 function getAudioDuration(audioData: Float32Array, sampleRate: number): number {
   return audioData.length / sampleRate;
 }
+
+
 
 /**
  * Generates an audio file from text using local Kokoro TTS.
@@ -266,6 +269,7 @@ function getNarrationText(slide: any): string | { parts: { text: string; pauseAf
       return formatQuizNarration(slide);
     case "kidsContent":
       // Join all lines into one continuous narration (no silence gaps)
+      // Mark as kids content so setNarrationUrls can use word-timed generation
       return slide.lines.join(". ");
     case "outro":
       return `${slide.title || ""}. ${slide.callToAction || ""}`;
@@ -287,7 +291,7 @@ export async function setNarrationUrls(
   const voiceName = KOKORO_VOICES[voiceId]?.name || voiceId;
   const folderName = buildFolderName(prompt, voiceName);
   // Default speed set to 1.1 for slightly faster, more engaging narration (viral style)
-  const options: KokoroOptions = { voice: voiceId, speed: 0.75 };
+  const options: KokoroOptions = { voice: voiceId, speed: 0.8 };
   console.log(`Generating Local Kokoro narration (voice: ${voiceName}, speed: ${options.speed}) → /audio/${folderName}/`);
 
   for (let index = 0; index < timeline.slides.length; index++) {
@@ -310,10 +314,19 @@ export async function setNarrationUrls(
           console.log(`    → Slide ${index}: duration=${slide.durationInSeconds}s, reveal@${slide.revealTimeSeconds?.toFixed(1)}s, startTick@${slide.startFromSeconds?.toFixed(1)}s`);
         }
 
-        // For kidsContent: set duration exactly to audio length (no silence)
+        // For kidsContent: transcribe the natural TTS audio for word-level subtitle sync
         if (slide.type === "kidsContent") {
-          slide.durationInSeconds = Math.ceil(result.durationSeconds * 2) / 2; // Round up to nearest 0.5s
-          console.log(`    → Kids Slide ${index}: duration=${slide.durationInSeconds}s (from audio)`);
+          const audioDir = path.join(process.cwd(), "public", "audio", folderName);
+          const wavPath = path.join(audioDir, `slide-${index}.wav`);
+
+          // Use whisper.cpp to transcribe the naturally generated audio
+          const captions = await transcribeAudio(wavPath);
+          slide.captions = captions;
+
+          // Set duration from audio length + buffer
+          const newDuration = Math.ceil((result.durationSeconds + 1.5) * 2) / 2;
+          slide.durationInSeconds = newDuration;
+          console.log(`    → Kids Slide ${index}: duration=${slide.durationInSeconds}s, ${captions.length} caption tokens`);
         }
 
         // For other narrative slides (intro, outro, etc.): sync duration with audio

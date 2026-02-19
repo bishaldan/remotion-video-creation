@@ -11,12 +11,28 @@ export const EDU_KIDS_WIDTH = 1080;
 export const EDU_KIDS_HEIGHT = 1920;
 
 /**
+ * Caption data from whisper.cpp transcription.
+ * Compatible with @remotion/captions Caption type.
+ * Used for TikTok-style word highlighting.
+ */
+export const CaptionSchema = z.object({
+    text: z.string(),
+    startMs: z.number(),
+    endMs: z.number(),
+    timestampMs: z.number().nullable(),
+    confidence: z.number().nullable(),
+});
+
+export type CaptionData = z.infer<typeof CaptionSchema>;
+
+/**
  * Each "kidsContent" slide represents one continuous narration segment.
  * - `lines`: short text lines shown 1-2 at a time on screen
  * - `backgroundImageQueries`: 8-9 kid-friendly search keywords
  * - `backgroundImageUrls`: resolved image URLs (filled by setImagesUrl)
  * - Every ~2 seconds, background image transitions (slide in/out from top or bottom)
  * - Words are highlighted as they are spoken (TikTok-style)
+ * - `captions`: word-level timing from whisper.cpp transcription for 100% sync
  */
 export const KidsContentSlideSchema = z.object({
     type: z.literal("kidsContent"),
@@ -25,6 +41,7 @@ export const KidsContentSlideSchema = z.object({
     backgroundImageUrls: z.array(z.string()).optional(),
     durationInSeconds: z.number().default(20),
     narrationUrl: z.string().optional(),
+    captions: z.array(CaptionSchema).optional(),
 });
 
 export const KidsSlideSchema = z.discriminatedUnion("type", [

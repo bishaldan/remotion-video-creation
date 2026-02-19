@@ -33,6 +33,7 @@ export const EduKidsMain: React.FC<z.infer<typeof KidsTimelineSchema>> = ({
                         backgroundImageUrls={slide.backgroundImageUrls}
                         durationInSeconds={slide.durationInSeconds}
                         narrationUrl={slide.narrationUrl}
+                        captions={slide.captions}
                     />
                 );
             case "outro":

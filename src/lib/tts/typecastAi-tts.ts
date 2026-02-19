@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { transcribeAudio } from "./whisper-transcribe";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Typecast AI Configuration
@@ -144,7 +145,8 @@ async function callTypecastAPI(
  * Reads the WAV header to get sample rate, channels, and bits per sample.
  */
 function getWavDuration(buffer: Buffer): number {
-  if (buffer.length < 44) return 0; // Minimum WAV header size
+  if (buffer.length < 44) return 0;
+
 
   // WAV header: bytes 24-27 = sample rate, 34-35 = bits per sample, 22-23 = channels
   const sampleRate = buffer.readUInt32LE(24);
@@ -295,9 +297,8 @@ async function generateCombinedTTS(
   return { durationSeconds, revealTimeSeconds, questionAndOptionsEndSeconds };
 }
 
-/**
- * Creates a WAV file buffer from raw PCM data.
- */
+
+
 function createWavBuffer(
   pcmData: Buffer,
   sampleRate: number,
@@ -315,13 +316,13 @@ function createWavBuffer(
 
   // fmt sub-chunk
   header.write("fmt ", 12);
-  header.writeUInt32LE(16, 16);                                    // Sub-chunk size
-  header.writeUInt16LE(1, 20);                                     // PCM format
-  header.writeUInt16LE(numChannels, 22);                           // Channels
-  header.writeUInt32LE(sampleRate, 24);                            // Sample rate
-  header.writeUInt32LE(sampleRate * numChannels * bytesPerSample, 28); // Byte rate
-  header.writeUInt16LE(numChannels * bytesPerSample, 32);          // Block align
-  header.writeUInt16LE(bitsPerSample, 34);                         // Bits per sample
+  header.writeUInt32LE(16, 16);
+  header.writeUInt16LE(1, 20);
+  header.writeUInt16LE(numChannels, 22);
+  header.writeUInt32LE(sampleRate, 24);
+  header.writeUInt32LE(sampleRate * numChannels * bytesPerSample, 28);
+  header.writeUInt16LE(numChannels * bytesPerSample, 32);
+  header.writeUInt16LE(bitsPerSample, 34);
 
   // data sub-chunk
   header.write("data", 36);
@@ -425,10 +426,19 @@ export async function setNarrationUrls(
           console.log(`    → Slide ${index}: duration=${slide.durationInSeconds}s, reveal@${slide.revealTimeSeconds?.toFixed(1)}s, startTick@${slide.startFromSeconds?.toFixed(1)}s`);
         }
 
-        // For kidsContent: set duration exactly to audio length (no silence)
+        // For kidsContent: transcribe the natural TTS audio for word-level subtitle sync
         if (slide.type === "kidsContent") {
-          slide.durationInSeconds = Math.ceil(result.durationSeconds * 2) / 2; // Round up to nearest 0.5s
-          console.log(`    → Kids Slide ${index}: duration=${slide.durationInSeconds}s (from audio)`);
+          const audioDir = path.join(process.cwd(), "public", "audio", folderName);
+          const wavPath = path.join(audioDir, `slide-${index}.wav`);
+
+          // Use whisper.cpp to transcribe the naturally generated audio
+          const captions = await transcribeAudio(wavPath);
+          slide.captions = captions;
+
+          // Set duration from audio length + buffer
+          const newDuration = Math.ceil((result.durationSeconds + 1.5) * 2) / 2;
+          slide.durationInSeconds = newDuration;
+          console.log(`    → Kids Slide ${index}: duration=${slide.durationInSeconds}s, ${captions.length} caption tokens`);
         }
 
         // For other narrative slides (intro, outro, etc.): sync duration with audio

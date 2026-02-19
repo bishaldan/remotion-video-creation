@@ -14,7 +14,9 @@ import {
     useCurrentFrame,
     useVideoConfig,
 } from "remotion";
+import { createTikTokStyleCaptions } from "@remotion/captions";
 import { getAudioSrc } from "../utils/audio-src";
+import type { CaptionData } from "../../../types/edu-kids";
 
 loadFont("normal", {
     weights: ["400", "700", "800", "900"],
@@ -25,6 +27,7 @@ interface KidsEduSlideProps {
     backgroundImageUrls?: string[];
     durationInSeconds: number;
     narrationUrl?: string;
+    captions?: CaptionData[];
 }
 
 const BG_TRANSITION_DURATION = 20; // ~0.67s at 30fps
@@ -47,68 +50,140 @@ export const KidsEduSlide: React.FC<KidsEduSlideProps> = ({
     backgroundImageUrls = [],
     durationInSeconds,
     narrationUrl,
+    captions,
 }) => {
     const frame = useCurrentFrame();
     const { fps } = useVideoConfig();
 
-    // ─── Word Timing (character-proportional) ──────────────────────────
-    const allWords = useMemo(() => {
-        return lines.map((line) => line.split(" "));
-    }, [lines]);
+    // ─── Word Timing Logic ───
 
+    // 1. Whisper Captions (Primary)
+    const { pages } = useMemo(() => {
+        if (!captions || captions.length === 0) {
+            console.log("❌ No captions provided to KidsEduSlide");
+            return { pages: [] };
+        }
+        const result = createTikTokStyleCaptions({
+            captions,
+            combineTokensWithinMilliseconds: 3000,
+        });
+        console.log("✅ Generated TikTok Pages:", result.pages.length);
+        return result;
+    }, [captions]);
+
+    // 2. Fallback (Character Proportional)
+    const allWords = useMemo(() => lines.map((line) => line.split(" ")), [lines]);
     const flatWords = useMemo(() => allWords.flat(), [allWords]);
 
     const totalFrames = durationInSeconds * fps;
 
-    const wordTimingFrames = useMemo(() => {
+    // Determine what to display
+    let displayWords: { text: string; startFrame: number; endFrame: number }[] = [];
+    let currentLocalIndex = -1;
+    let lineStartFrame = 0;
+    let activePage: any = null;
+
+    if (captions && pages.length > 0) {
+        // ─── A. Whisper Algo ───
+        const currentTimeMs = (frame / fps) * 1000;
+        activePage = pages.find((p) => currentTimeMs >= p.startMs && currentTimeMs < (p.startMs + p.durationMs)) || null;
+
+        if (activePage) {
+            displayWords = activePage.tokens.map((t: any) => ({
+                text: t.text,
+                startFrame: (t.fromMs / 1000) * fps,
+                endFrame: (t.toMs / 1000) * fps,
+            }));
+            lineStartFrame = (activePage.startMs / 1000) * fps;
+
+            // Find which word is active
+            // Note: whisper tokens are continuous in time (mostly). 
+            // If frame is between two words (silence), we keep the previous word active or none? 
+            // TikTok style usually highlights correctly.
+            currentLocalIndex = displayWords.findIndex(
+                (w) => frame >= w.startFrame && frame < w.endFrame
+            );
+
+            // If we are in the page but not on a specific word (gap), 
+            // check if we are past a word to mark it as "past"
+            if (currentLocalIndex === -1) {
+                // all words whose endFrame < frame are past
+                const firstFuture = displayWords.findIndex(w => frame < w.startFrame);
+                currentLocalIndex = firstFuture === -1 ? displayWords.length : firstFuture - 1;
+                // if currentLocalIndex is -1, it means we are before the first word of the page (but in page time?)
+            }
+        }
+    } else {
+        // ─── B. Fallback Algo ───
         const totalChars = flatWords.reduce((sum, w) => sum + w.length, 0);
-        if (totalChars === 0) return [];
-        let cumulative = 0;
-        return flatWords.map((word) => {
-            const wordFrames = (word.length / totalChars) * totalFrames;
-            const start = cumulative;
-            cumulative += wordFrames;
-            return { start, end: cumulative };
+
+        // Calculate timing frames for all words (only if needed)
+        const wordTimingFrames: { start: number; end: number }[] = [];
+        if (totalChars > 0) {
+            let cumulative = 0;
+            for (const word of flatWords) {
+                const wordFrames = (word.length / totalChars) * totalFrames;
+                wordTimingFrames.push({
+                    start: cumulative,
+                    end: cumulative + wordFrames,
+                });
+                cumulative += wordFrames;
+            }
+        }
+
+        // Find global index
+        let currentWordGlobalIndex = 0;
+        for (let i = 0; i < wordTimingFrames.length; i++) {
+            if (frame >= wordTimingFrames[i].start) {
+                currentWordGlobalIndex = i;
+            } else {
+                break;
+            }
+        }
+
+        // Find active line
+        let wordCountSoFar = 0;
+        let activeLineIndex = 0;
+        let activeLineWordStartIndex = 0;
+
+        for (let i = 0; i < lines.length; i++) {
+            const lineWordCount = allWords[i].length;
+            if (
+                currentWordGlobalIndex >= wordCountSoFar &&
+                currentWordGlobalIndex < wordCountSoFar + lineWordCount
+            ) {
+                activeLineIndex = i;
+                activeLineWordStartIndex = wordCountSoFar;
+                break;
+            }
+            wordCountSoFar += lineWordCount;
+            if (i === lines.length - 1) {
+                activeLineIndex = i;
+                activeLineWordStartIndex = wordCountSoFar - lineWordCount;
+            }
+        }
+
+        const currentLineWordsFallback = allWords[activeLineIndex] || [];
+        lineStartFrame = wordTimingFrames[activeLineWordStartIndex]?.start ?? 0;
+        currentLocalIndex = currentWordGlobalIndex - activeLineWordStartIndex;
+
+        displayWords = currentLineWordsFallback.map((w, i) => {
+            const gIdx = activeLineWordStartIndex + i;
+            const tf = wordTimingFrames[gIdx];
+            return {
+                text: w,
+                startFrame: tf?.start ?? 0,
+                endFrame: tf?.end ?? 0,
+            };
         });
-    }, [flatWords, totalFrames]);
 
-    // Current word global index
-    let currentWordGlobalIndex = 0;
-    for (let i = 0; i < wordTimingFrames.length; i++) {
-        if (frame >= wordTimingFrames[i].start) {
-            currentWordGlobalIndex = i;
-        } else {
-            break;
+        if (displayWords.length > 0) {
+            activePage = {
+                startMs: (displayWords[0].startFrame / fps) * 1000,
+                durationMs: ((displayWords[displayWords.length - 1].endFrame - displayWords[0].startFrame) / fps) * 1000
+            };
         }
     }
-
-    // Find active line
-    let wordCountSoFar = 0;
-    let activeLineIndex = 0;
-    let activeLineWordStartIndex = 0;
-
-    for (let i = 0; i < lines.length; i++) {
-        const lineWordCount = allWords[i].length;
-        if (
-            currentWordGlobalIndex >= wordCountSoFar &&
-            currentWordGlobalIndex < wordCountSoFar + lineWordCount
-        ) {
-            activeLineIndex = i;
-            activeLineWordStartIndex = wordCountSoFar;
-            break;
-        }
-        wordCountSoFar += lineWordCount;
-        if (i === lines.length - 1) {
-            activeLineIndex = i;
-            activeLineWordStartIndex = wordCountSoFar - lineWordCount;
-        }
-    }
-
-    const currentLineWords = allWords[activeLineIndex] || [];
-    const currentWordLocalIndex = currentWordGlobalIndex - activeLineWordStartIndex;
-
-    // Line entrance frame — when the first word of this line appears
-    const lineEntranceFrame = wordTimingFrames[activeLineWordStartIndex]?.start ?? 0;
 
     // ─── Background Image Cycling ──────────────────────────────────────
     const IMAGE_DURATION_IN_SECONDS = 4.5;
@@ -190,55 +265,70 @@ export const KidsEduSlide: React.FC<KidsEduSlideProps> = ({
                 }}
             >
                 {/* Glassmorphism pill container */}
-                <div
-                    style={{
-                        backgroundColor: "rgba(0, 0, 0, 0.45)",
-                        backdropFilter: "blur(12px)",
-                        WebkitBackdropFilter: "blur(12px)",
-                        borderRadius: 24,
-                        padding: "28px 36px",
-                        border: "1px solid rgba(255, 255, 255, 0.12)",
-                        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
-                        maxWidth: "95%",
-                    }}
-                >
+                {activePage && (
                     <div
                         style={{
-                            fontFamily,
-                            fontSize: 76,
-                            fontWeight: 800,
-                            textAlign: "center",
-                            display: "flex",
-                            flexWrap: "wrap",
-                            justifyContent: "center",
-                            gap: "12px 14px",
-                            lineHeight: 1.2,
+                            backgroundColor: "rgba(0, 0, 0, 0.45)",
+                            backdropFilter: "blur(12px)",
+                            WebkitBackdropFilter: "blur(12px)",
+                            borderRadius: 24,
+                            padding: "28px 36px",
+                            border: "1px solid rgba(255, 255, 255, 0.12)",
+                            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+                            maxWidth: "95%",
+                            // Smooth entrance/exit
+                            opacity: interpolate(
+                                (frame / fps) * 1000,
+                                [
+                                    activePage.startMs,
+                                    activePage.startMs + 150,
+                                    activePage.startMs + activePage.durationMs - 150,
+                                    activePage.startMs + activePage.durationMs
+                                ],
+                                [0, 1, 1, 0],
+                                { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+                            ),
+                            transform: `scale(${interpolate(
+                                (frame / fps) * 1000,
+                                [activePage.startMs, activePage.startMs + 300],
+                                [0.9, 1],
+                                { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+                            )})`,
                         }}
                     >
-                        {currentLineWords.map((word, i) => {
-                            const globalIdx = activeLineWordStartIndex + i;
-                            const wordStartFrame =
-                                wordTimingFrames[globalIdx]?.start ?? 0;
-
-                            return (
+                        <div
+                            style={{
+                                fontFamily,
+                                fontSize: 76,
+                                fontWeight: 800,
+                                textAlign: "center",
+                                display: "flex",
+                                flexWrap: "wrap",
+                                justifyContent: "center",
+                                gap: "12px 14px",
+                                lineHeight: 1.2,
+                            }}
+                        >
+                            {displayWords.map((wordObj, i) => (
                                 <AnimatedWord
-                                    key={`${activeLineIndex}-${i}`}
-                                    word={word}
-                                    isActive={i === currentWordLocalIndex}
-                                    isPast={i < currentWordLocalIndex}
-                                    isFuture={i > currentWordLocalIndex}
-                                    wordStartFrame={wordStartFrame}
-                                    lineEntranceFrame={lineEntranceFrame}
+                                    key={`${i}-${wordObj.text}`}
+                                    word={wordObj.text}
+                                    isActive={i === currentLocalIndex}
+                                    isPast={i < currentLocalIndex}
+                                    isFuture={i > currentLocalIndex}
+                                    wordStartFrame={wordObj.startFrame}
+                                    lineEntranceFrame={lineStartFrame}
                                     wordIndex={i}
                                 />
-                            );
-                        })}
+                            ))}
+                        </div>
                     </div>
-                </div>
+                )}
             </AbsoluteFill>
 
             {/* ════════ AUDIO ════════ */}
             {narrationUrl && <Html5Audio src={getAudioSrc(narrationUrl)} />}
+
         </AbsoluteFill>
     );
 };
@@ -328,28 +418,9 @@ const AnimatedWord: React.FC<{
         extrapolateRight: "clamp",
     });
 
-    // ── Active word pulse ──
-    const activeSpring = spring({
-        fps,
-        frame,
-        delay: wordStartFrame,
-        config: {
-            damping: 6,       // Bouncy!
-            stiffness: 200,
-            mass: 0.5,
-        },
-        durationInFrames: 14,
-    });
-
-    // Active word gets a scale bump
-    const activeScale = isActive
-        ? interpolate(activeSpring, [0, 1], [1.0, 1.18])
-        : 1.0;
-
-    // Active word bounces up slightly
-    const activeY = isActive
-        ? interpolate(activeSpring, [0, 0.5, 1], [0, -6, 0])
-        : 0;
+    // ── Active word styles ──
+    const activeScale = 1.0;
+    const activeY = 0;
 
     // Combined transforms
     const finalScale = entranceScale * activeScale;

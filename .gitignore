@@ -24,7 +24,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
-
 # local env files
 .env*.local
 
@@ -41,6 +40,7 @@ build
 .agent
 .agents
 .claude
+.cursor
 .gemini
 .github
 .opencode
@@ -60,4 +60,5 @@ public/audio/*
 
 # Typecast: un-ignore folder, ignore content, re-allow default
 !public/audio/typecast/default/
+/whisper.cpp/
 

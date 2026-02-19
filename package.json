@@ -16,6 +16,7 @@
     "@remotion/captions": "^4.0.423",
     "@remotion/cli": "4.0.421",
     "@remotion/google-fonts": "4.0.421",
+    "@remotion/install-whisper-cpp": "^4.0.424",
     "@remotion/lambda": "4.0.421",
     "@remotion/light-leaks": "4.0.421",
     "@remotion/lottie": "4.0.421",
