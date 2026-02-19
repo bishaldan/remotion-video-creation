@@ -822,11 +822,11 @@ const Home: NextPage = () => {
                     if (voiceProvider === "kokoro") {
                       const details = KOKORO_VOICES[voiceId];
                       if (details) {
-                        audioPlayer.src = `/audio/kokoro/default/${voiceId}_${details.gender}_${details.accent.toLowerCase()}.wav`;
+                        audioPlayer.src = `/audio/default/kokoro-default/${voiceId}_${details.gender}_${details.accent.toLowerCase()}.wav`;
                         audioPlayer.play().catch(() => { });
                       }
                     } else {
-                      audioPlayer.src = `/audio/typecast/default/${voiceId}.wav`;
+                      audioPlayer.src = `/audio/default/typecast-default/${voiceId}.wav`;
                       audioPlayer.play().catch(() => { });
                     }
                   }

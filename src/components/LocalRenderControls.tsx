@@ -1,7 +1,7 @@
 import React from "react";
 import type { Timeline } from "../../types/edu";
 import type { KidsTimeline } from "../../types/edu-kids";
-import type { QuizTimeline, SingleQuizTimeline } from "../../types/quiz";
+import type { DualQuizTimeline, SingleQuizTimeline } from "../../types/quiz";
 import { useLocalRendering } from "../helpers/use-local-rendering";
 import { Button } from "./Button";
 import { InputContainer } from "./Container";
@@ -12,7 +12,7 @@ import { Spacing } from "./Spacing";
 
 export const LocalRenderControls: React.FC<{
   compositionId: string;
-  inputProps: Timeline | QuizTimeline | SingleQuizTimeline | KidsTimeline;
+  inputProps: Timeline | DualQuizTimeline | SingleQuizTimeline | KidsTimeline;
 }> = ({ compositionId, inputProps }) => {
   const [saveAs, setSaveAs] = React.useState("")
   const { renderMedia, state, undo } = useLocalRendering(compositionId, inputProps, saveAs);
