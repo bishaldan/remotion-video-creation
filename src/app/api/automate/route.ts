@@ -21,7 +21,7 @@ import { cleanJsonResponse } from "../../../lib/utils";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type Mode = "normal" | "educationKids" | "dualQuiz" | "singleQuiz";
+type Mode = "normal" | "educationKids" | "dualQuiz" | "singleQuiz" | "dualQuiz_portrait" | "dualQuiz_landscape";
 type Orientation = "landscape" | "portrait";
 type VoiceType = "kokoro" | "typecast";
 
@@ -39,6 +39,8 @@ const SYSTEM_PROMPTS: Record<Mode, string> = {
     normal: EDUCATION_SYSTEM_PROMPT,
     educationKids: EDUCATION_KIDS_SYSTEM_PROMPT,
     dualQuiz: QUIZ_SYSTEM_PROMPT,
+    dualQuiz_portrait: QUIZ_SYSTEM_PROMPT,
+    dualQuiz_landscape: QUIZ_SYSTEM_PROMPT,
     singleQuiz: SINGLE_QUIZ_SYSTEM_PROMPT,
 };
 
@@ -69,7 +71,7 @@ export async function POST(request: NextRequest) {
     try {
         // ── 1. Parse request ────────────────────────────────────────────────────
         const body: AutomateBody = await request.json();
-        const {
+        let {
             prompt: userPrompt,
             mode = "normal",
             orientation = "landscape",
@@ -77,6 +79,11 @@ export async function POST(request: NextRequest) {
             voiceId = "am_santa",
         } = body;
 
+        if (mode.includes('_') && mode.includes('dualQuiz')) {
+            const arr = mode.split('_') as [Mode, Orientation];
+            mode = arr[0];
+            orientation = arr[1];
+        }
         if (!userPrompt || typeof userPrompt !== "string") {
             return NextResponse.json({ error: "prompt is required" }, { status: 400 });
         }
