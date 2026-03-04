@@ -53,7 +53,7 @@ function cleanTTSText(text: string): string {
     .replace(/`+/g, "")
     // Remove emojis and symbols
     .replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]|[\uD83C-\uD83E][\uDC00-\uDFFF])/g, "")
-    .replace(/[^\w\s.,?!'-]/g, "") // Remove most other non-word symbols
+    .replace(/[^\w\s.,?!:;'-]/g, "") // Remove most other non-word symbols (keep : and ;)
     .replace(/\s+/g, " ") // Collapse multiple spaces
     .trim();
 }
@@ -97,11 +97,39 @@ async function callTypecastAPI(
   text: string,
   options: TypecastOptions = {}
 ): Promise<Buffer> {
-  const apiKey = process.env.TYPECAST_API_KEY;
-  if (!apiKey) {
+  const primaryApiKey = process.env.TYPECAST_API_KEY;
+  const secondaryApiKey = process.env.TYPECAST_API_KEY2;
+
+  if (!primaryApiKey) {
     throw new Error("TYPECAST_API_KEY environment variable is not set");
   }
 
+  // Try primary key first
+  try {
+    return await executeTypecastRequest(text, primaryApiKey, options);
+  } catch (primaryError: any) {
+    // If primary fails and we have a secondary key, try the secondary key
+    if (secondaryApiKey) {
+      console.warn(`Typecast Primary API Key failed (attempting fallback): ${primaryError.message}`);
+      try {
+        return await executeTypecastRequest(text, secondaryApiKey, options);
+      } catch (secondaryError: any) {
+        throw new Error(`Both Typecast API keys failed. Primary: ${primaryError.message}. Secondary: ${secondaryError.message}`);
+      }
+    }
+    // If no secondary key, re-throw primary error
+    throw primaryError;
+  }
+}
+
+/**
+ * Executes a single Typecast API request
+ */
+async function executeTypecastRequest(
+  text: string,
+  apiKey: string,
+  options: TypecastOptions = {}
+): Promise<Buffer> {
   const voiceId = options.voiceId || DEFAULT_VOICE_ID;
   const model = options.model || DEFAULT_MODEL;
 
@@ -385,7 +413,13 @@ function getNarrationText(slide: any): string | { parts: { text: string; pauseAf
       return formatQuizNarration(slide);
     case "kidsContent":
       // Join all lines into one continuous narration (no silence gaps)
-      return slide.lines.join(". ");
+      return slide.lines
+        .map((line: string) => {
+          const l = line.trim();
+          if (/[.?!]$/.test(l)) return l;
+          return l + ".";
+        })
+        .join(" ");
     case "outro":
       return `${slide.title || ""}. ${slide.callToAction || ""}`;
     default:

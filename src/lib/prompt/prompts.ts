@@ -240,7 +240,7 @@ type Slide =
   | {
       type: "kidsContent";
       lines: string[];           // Short text lines, each ≤ 6 words. Simple kid-friendly language.
-      backgroundImageQueries: string[]; // 15-20 kid-friendly image search keywords (e.g. "cute dolphin", "rainbow sky")
+      backgroundImageQueries: string[]; // 10-15 kid-friendly image search keywords (e.g. "cute dolphin", "rainbow sky")
       durationInSeconds: number; // Will be auto-calculated from narration, set to 20 as default
     }
   | {

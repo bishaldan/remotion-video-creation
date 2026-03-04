@@ -49,7 +49,7 @@ function cleanTTSText(text: string): string {
     .replace(/#/g, "")
     // Remove emojis and symbols
     .replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]|[\uD83C-\uD83E][\uDC00-\uDFFF])/g, "")
-    .replace(/[^\w\s.,?!'-]/g, "") // Remove most other non-word symbols
+    .replace(/[^\w\s.,?!:;'-]/g, "") // Remove most other non-word symbols (keep : and ;)
     .replace(/\s+/g, " ") // Collapse multiple spaces
     .trim();
 }
@@ -269,8 +269,14 @@ function getNarrationText(slide: any): string | { parts: { text: string; pauseAf
       return formatQuizNarration(slide);
     case "kidsContent":
       // Join all lines into one continuous narration (no silence gaps)
-      // Mark as kids content so setNarrationUrls can use word-timed generation
-      return slide.lines.join(". ");
+      // Only add a period if the line doesn't already end with punctuation.
+      return slide.lines
+        .map((line: string) => {
+          const l = line.trim();
+          if (/[.?!]$/.test(l)) return l;
+          return l + ".";
+        })
+        .join(" ");
     case "outro":
       return `${slide.title || ""}. ${slide.callToAction || ""}`;
     default:
@@ -291,7 +297,7 @@ export async function setNarrationUrls(
   const voiceName = KOKORO_VOICES[voiceId]?.name || voiceId;
   const folderName = buildFolderName(prompt, voiceName);
   // Default speed set to 1.1 for slightly faster, more engaging narration (viral style)
-  const options: KokoroOptions = { voice: voiceId, speed: 0.8 };
+  const options: KokoroOptions = { voice: voiceId, speed: 0.7 };
   console.log(`Generating Local Kokoro narration (voice: ${voiceName}, speed: ${options.speed}) → /audio/${folderName}/`);
 
   for (let index = 0; index < timeline.slides.length; index++) {

@@ -158,8 +158,8 @@ function postProcessCaptions(captions: Caption[]): Caption[] {
         // 1. Noise markers like [BLANK_AUDIO], [MUSIC], [LAUGHTER], (Music)
         if (t.startsWith("[") && t.endsWith("]")) return false;
         if (t.startsWith("(") && t.endsWith(")")) return false;
-        // 2. Junk tokens that are just a single dot or punctuation marks without preceding text
-        if (t === "." || t === "..." || t === ".." || t === "," || t === "") return false;
+        // 2. Junk tokens that are just empty strings (keep punctuation for merging)
+        if (t === "") return false;
         // 3. Explicit noise words that Whisper sometimes hallucinates
         if (t.toLowerCase().includes("blank_audio")) return false;
 

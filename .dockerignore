@@ -38,3 +38,14 @@ coverage
 .cache
 .turbo
 tsconfig.tsbuildinfo
+
+# Whisper.cpp - exclude macOS binaries and heavy model files
+# (source code is kept; binaries are recompiled for Linux in builder stage)
+# (model is downloaded at runtime and cached)
+whisper.cpp/*.o
+whisper.cpp/main
+whisper.cpp/quantize
+whisper.cpp/server
+whisper.cpp/bench
+whisper.cpp/ggml-medium.en.bin
+whisper.cpp/models/ggml-*.bin
