@@ -162,6 +162,14 @@ function postProcessCaptions(captions: Caption[]): Caption[] {
         if (t === "") return false;
         // 3. Explicit noise words that Whisper sometimes hallucinates
         if (t.toLowerCase().includes("blank_audio")) return false;
+        if (t.toLowerCase().includes("blank audio")) return false;
+        // 4. Standalone brackets or bracket fragments (split tokens)
+        if (/^\[?BLANK[_ ]?AUDIO\]?$/i.test(t)) return false;
+        // 5. Lone brackets or bracket-only tokens
+        if (/^[\[\]()]+$/.test(t)) return false;
+        // 6. Other common Whisper hallucination markers
+        if (/^\[.*\]$/.test(t)) return false;
+        if (/^\(.*\)$/.test(t)) return false;
 
         return true;
     });

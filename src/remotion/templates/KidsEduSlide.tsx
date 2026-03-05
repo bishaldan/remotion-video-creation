@@ -81,7 +81,19 @@ export const KidsEduSlide: React.FC<KidsEduSlideProps> = ({
     let displayWords: { text: string; startFrame: number; endFrame: number }[] = [];
     let currentLocalIndex = -1;
     let lineStartFrame = 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let activePage: any = null;
+
+    // Render-level noise filter (safety net for whisper artifacts)
+    const isNoiseToken = (text: string) => {
+        const t = text.trim();
+        if (!t) return true;
+        if (/BLANK.?AUDIO/i.test(t)) return true;
+        if (/^\[.*\]$/.test(t)) return true;
+        if (/^\(.*\)$/.test(t)) return true;
+        if (/^[\[\]()]+$/.test(t)) return true;
+        return false;
+    };
 
     if (captions && pages.length > 0) {
         // ─── A. Whisper Algo ───
@@ -89,11 +101,13 @@ export const KidsEduSlide: React.FC<KidsEduSlideProps> = ({
         activePage = pages.find((p) => currentTimeMs >= p.startMs && currentTimeMs < (p.startMs + p.durationMs)) || null;
 
         if (activePage) {
-            displayWords = activePage.tokens.map((t: any) => ({
-                text: t.text,
-                startFrame: (t.fromMs / 1000) * fps,
-                endFrame: (t.toMs / 1000) * fps,
-            }));
+            displayWords = activePage.tokens
+                .map((t: any) => ({
+                    text: t.text,
+                    startFrame: (t.fromMs / 1000) * fps,
+                    endFrame: (t.toMs / 1000) * fps,
+                }))
+                .filter((w: { text: string }) => !isNoiseToken(w.text));
             lineStartFrame = (activePage.startMs / 1000) * fps;
 
             // Find which word is active
