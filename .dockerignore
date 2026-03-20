@@ -38,6 +38,7 @@ coverage
 .cache
 .turbo
 tsconfig.tsbuildinfo
+test-video*.mp4
 
 # Whisper.cpp - exclude macOS binaries and heavy model files
 # (source code is kept; binaries are recompiled for Linux in builder stage)

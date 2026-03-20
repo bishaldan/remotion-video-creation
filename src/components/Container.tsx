@@ -4,7 +4,7 @@ export const InputContainer: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
   return (
-    <div className="border border-unfocused-border-color p-geist rounded-geist bg-background flex flex-col">
+    <div className="flex flex-col rounded-[1.5rem] border border-white/10 bg-slate-950/60 p-geist">
       {children}
     </div>
   );

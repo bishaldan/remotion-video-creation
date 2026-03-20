@@ -31,12 +31,13 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
+RUN mkdir -p whisper.cpp whisper.cpp/models
 
 RUN npm run build
 
 # Compile whisper.cpp for Linux (replaces any macOS binaries)
 # Use generic CPU target to avoid NEON FP16 intrinsic mismatches in Docker
-RUN if [ -d "whisper.cpp" ]; then \
+RUN if [ -f "whisper.cpp/Makefile" ]; then \
     cd whisper.cpp && \
     rm -f *.o main quantize server && \
     make -j2 UNAME_M=aarch64 \
@@ -98,6 +99,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/public              ./public
 COPY --from=builder --chown=nextjs:nodejs /app/package.json        ./package.json
 COPY --from=builder --chown=nextjs:nodejs /app/postcss.config.mjs  ./postcss.config.mjs
 COPY --from=builder --chown=nextjs:nodejs /app/next.config.js      ./next.config.js
+COPY --from=builder --chown=nextjs:nodejs /app/config.mjs          ./config.mjs
 COPY --from=builder --chown=nextjs:nodejs /app/src                 ./src
 COPY --from=builder --chown=nextjs:nodejs /app/types               ./types
 COPY --from=builder --chown=nextjs:nodejs /app/remotion.config.ts  ./remotion.config.ts
@@ -118,4 +120,3 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD node -e "require('http').get('http://localhost:3000', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
 
 CMD ["npm", "start"]
-

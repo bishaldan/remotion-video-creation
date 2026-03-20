@@ -2,8 +2,9 @@ import { Metadata, Viewport } from "next";
 import "../../styles/global.css";
 
 export const metadata: Metadata = {
-  title: "Remotion and Next.js",
-  description: "Remotion and Next.js",
+  title: "Remotion Video Creation",
+  description:
+    "Generate educational explainers and quiz videos with Next.js, Remotion, AI prompts, image sourcing, and local or cloud voice pipelines.",
 };
 
 export const viewport: Viewport = {
@@ -21,7 +22,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-background">
+      <body className="bg-background text-foreground antialiased">
         {children}
         <Toaster />
       </body>

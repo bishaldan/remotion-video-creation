@@ -24,7 +24,7 @@ export const LocalRenderControls: React.FC<{
         state.status === "error" ? (
         <>
           <div className="text-slate-400 text-sm mb-4">
-            Videos will be saved to the <code className="bg-slate-800 px-2 py-1 rounded">/out</code> folder
+            Videos will be saved to the <code className="rounded bg-slate-900/80 px-2 py-1 text-cyan-200">/out</code> folder
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full">
@@ -35,7 +35,7 @@ export const LocalRenderControls: React.FC<{
                 placeholder="Enter a name for your video"
                 value={saveAs}
                 onChange={(e) => setSaveAs(e.target.value)}
-                className="flex-1 min-w-0 border border-slate-700 rounded px-2 py-1"
+                className="flex-1 min-w-0 rounded-xl border border-white/10 bg-slate-950/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 required
               />
             </label>
@@ -74,7 +74,7 @@ export const LocalRenderControls: React.FC<{
             <div>
               <p className="text-green-400 font-medium">Render Complete!</p>
               <p className="text-slate-400 text-sm">
-                Saved to: <code className="bg-slate-800 px-1 rounded">{state.outputPath}. Click Download Video to download the video</code>
+                Saved to: <code className="rounded bg-slate-900/80 px-1 text-cyan-200">{state.outputPath}. Click Download Video to download the video</code>
               </p>
             </div>
           </div>
@@ -84,7 +84,7 @@ export const LocalRenderControls: React.FC<{
               href={`/api/download-video?renderId=${state.renderId}&filename=${saveAs || "video"}`}
               target="_blank"
               rel="noreferrer"
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg flex items-center gap-2 transition-colors"
+              className="flex items-center gap-2 rounded-lg bg-cyan-400 px-4 py-2 font-medium text-slate-950 transition-colors hover:bg-cyan-300"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />

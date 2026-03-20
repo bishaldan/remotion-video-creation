@@ -494,27 +494,70 @@ const Home: NextPage = () => {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-cyan-950 to-slate-900 flex items-center justify-center">
         <div className="animate-pulse text-slate-400">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div className="max-w-screen-lg m-auto py-8 px-4">
+    <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-slate-950 via-cyan-950 to-slate-900">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[32rem] bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.16),transparent_45%)]" />
+      <div className="pointer-events-none absolute right-0 top-24 h-72 w-72 rounded-full bg-orange-400/10 blur-3xl" />
+      <div className="pointer-events-none absolute left-[-5rem] top-56 h-80 w-80 rounded-full bg-emerald-400/10 blur-3xl" />
+      <div className="relative max-w-screen-xl m-auto px-4 py-8 sm:px-6 lg:px-8">
         {/* Header */}
-        <header className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">
-            Educational Video Generator
-          </h1>
-          <p className="text-slate-400">
-            Enter a prompt to generate animated educational presentations
-          </p>
+        <header className="mb-10 rounded-[2rem] border border-white/10 bg-white/[0.04] px-6 py-8 shadow-2xl shadow-cyan-950/30 backdrop-blur-xl sm:px-8 lg:px-10">
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <span className="inline-flex items-center rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.28em] text-cyan-200">
+                Remotion Video Creation
+              </span>
+              <h1 className="mt-4 text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
+                Turn prompts and PDFs into polished explainer and quiz videos.
+              </h1>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">
+                Build educational timelines, preview the composition instantly, choose between local and premium voices, and render ready-to-share videos from one workspace.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3 text-sm text-slate-200">
+                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Prompt or PDF input</span>
+                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Education and quiz modes</span>
+                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Local or hosted voice generation</span>
+                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Remotion preview and export</span>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3 lg:w-[28rem]">
+              <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-4">
+                <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Modes</p>
+                <p className="mt-2 text-2xl font-semibold text-white">4</p>
+                <p className="mt-1 text-sm text-slate-400">Education, kids, dual quiz, single quiz.</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-4">
+                <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Voice Paths</p>
+                <p className="mt-2 text-2xl font-semibold text-white">2</p>
+                <p className="mt-1 text-sm text-slate-400">Kokoro local TTS or Typecast AI.</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-4">
+                <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Export</p>
+                <p className="mt-2 text-2xl font-semibold text-white">MP4</p>
+                <p className="mt-1 text-sm text-slate-400">Preview, tweak, then render locally.</p>
+              </div>
+            </div>
+          </div>
         </header>
 
         {/* Prompt Input Section */}
-        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-8">
+        <div className="mb-8 rounded-[2rem] border border-white/10 bg-white/[0.05] p-6 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl">
+          <div className="mb-6 flex flex-col gap-3 border-b border-white/10 pb-5 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-200">Creative Brief</p>
+              <h2 className="mt-2 text-2xl font-semibold text-white">Configure the video you want to generate.</h2>
+            </div>
+            <p className="max-w-md text-sm leading-6 text-slate-400">
+              Choose the format, optionally add a source PDF, then pick a voice and let the generator prepare a ready-to-render timeline.
+            </p>
+          </div>
 
           {/* Mode Selection */}
           <div className="flex flex-wrap gap-4 mb-6">
@@ -525,7 +568,7 @@ const Home: NextPage = () => {
                   setTimeline(eduTimelineState);
                 }}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${mode === "education"
-                  ? "bg-purple-600 text-white shadow-lg"
+                  ? "bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/30"
                   : "text-slate-400 hover:text-white"
                   }`}
               >
@@ -537,7 +580,7 @@ const Home: NextPage = () => {
                   setTimeline(dualQuizTimelineState);
                 }}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${mode === "quiz"
-                  ? "bg-purple-600 text-white shadow-lg"
+                  ? "bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/30"
                   : "text-slate-400 hover:text-white"
                   }`}
               >
@@ -554,7 +597,7 @@ const Home: NextPage = () => {
                       setTimeline(eduTimelineState);
                     }}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${eduMode === "mode1"
-                      ? "bg-indigo-600 text-white shadow-lg"
+                      ? "bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30"
                       : "text-slate-400 hover:text-white"
                       }`}
                   >
@@ -566,7 +609,7 @@ const Home: NextPage = () => {
                       setTimeline(eduKidsTimelineState);
                     }}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${eduMode === "mode2"
-                      ? "bg-indigo-600 text-white shadow-lg"
+                      ? "bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30"
                       : "text-slate-400 hover:text-white"
                       }`}
                   >
@@ -586,7 +629,7 @@ const Home: NextPage = () => {
                       setTimeline(dualQuizTimelineState);
                     }}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${quizMode === "dual"
-                      ? "bg-indigo-600 text-white shadow-lg"
+                      ? "bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30"
                       : "text-slate-400 hover:text-white"
                       }`}
                   >
@@ -598,7 +641,7 @@ const Home: NextPage = () => {
                       setTimeline(singleQuizTimelineState);
                     }}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${quizMode === "single"
-                      ? "bg-indigo-600 text-white shadow-lg"
+                      ? "bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30"
                       : "text-slate-400 hover:text-white"
                       }`}
                   >
@@ -612,7 +655,7 @@ const Home: NextPage = () => {
                     <button
                       onClick={() => setOrientation("landscape")}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${orientation === "landscape"
-                        ? "bg-blue-600 text-white shadow-lg"
+                        ? "bg-sky-500 text-slate-950 shadow-lg shadow-sky-500/30"
                         : "text-slate-400 hover:text-white"
                         }`}
                     >
@@ -621,7 +664,7 @@ const Home: NextPage = () => {
                     <button
                       onClick={() => setOrientation("portrait")}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${orientation === "portrait"
-                        ? "bg-blue-600 text-white shadow-lg"
+                        ? "bg-sky-500 text-slate-950 shadow-lg shadow-sky-500/30"
                         : "text-slate-400 hover:text-white"
                         }`}
                     >
@@ -655,8 +698,8 @@ const Home: NextPage = () => {
                 >
                   <div
                     className={`flex items-center justify-center gap-2 px-4 py-3 bg-white/5 border rounded-xl text-slate-400 transition-all duration-200 ${isDragging
-                      ? "border-purple-500 bg-purple-500/10 scale-[1.02]"
-                      : "border-white/10 hover:bg-white/10 hover:border-purple-500/50"
+                      ? "border-cyan-400 bg-cyan-400/10 scale-[1.02]"
+                      : "border-white/10 hover:bg-white/10 hover:border-cyan-400/50"
                       }`}
                   >
                     <svg
@@ -696,11 +739,11 @@ const Home: NextPage = () => {
 
               {/* Display selected file info */}
               {pdfFile && (
-                <div className="flex items-center justify-between px-4 py-3 bg-purple-500/10 border border-purple-500/30 rounded-xl">
+                <div className="flex items-center justify-between px-4 py-3 bg-cyan-400/10 border border-cyan-400/30 rounded-xl">
                   <div className="flex items-center gap-3">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5 text-purple-400"
+                      className="h-5 w-5 text-cyan-300"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -775,7 +818,7 @@ const Home: NextPage = () => {
                 ? "Add supplementary context for the PDF (optional)"
                 : "e.g. water cycle, photosynthesis, machine learning..."
             }
-            className="w-full h-32 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full h-32 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent resize-none disabled:opacity-50 disabled:cursor-not-allowed"
           />
 
           {/* Voice Selection (inline in prompt area) */}
@@ -790,7 +833,7 @@ const Home: NextPage = () => {
                     setPreviewVoiceId("");
                   }}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${voiceProvider === "kokoro"
-                    ? "bg-purple-600 text-white shadow-lg"
+                    ? "bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/30"
                     : "text-slate-400 hover:text-white"
                     }`}
                 >
@@ -802,7 +845,7 @@ const Home: NextPage = () => {
                     setPreviewVoiceId("");
                   }}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${voiceProvider === "typecast"
-                    ? "bg-purple-600 text-white shadow-lg"
+                    ? "bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/30"
                     : "text-slate-400 hover:text-white"
                     }`}
                 >
@@ -812,7 +855,7 @@ const Home: NextPage = () => {
 
               {/* Voice Dropdown */}
               <select
-                className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
                 value={previewVoiceId}
                 onChange={(e) => {
                   const voiceId = e.target.value;
@@ -905,7 +948,7 @@ const Home: NextPage = () => {
             <button
               onClick={handleGenerate}
               disabled={isGenerating}
-              className="ml-auto px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all duration-200 flex items-center gap-2"
+              className="ml-auto px-6 py-3 bg-gradient-to-r from-cyan-400 via-sky-500 to-emerald-400 hover:from-cyan-300 hover:via-sky-400 hover:to-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 shadow-lg shadow-cyan-500/20"
             >
               {isGenerating ? (
                 <>
@@ -941,12 +984,15 @@ const Home: NextPage = () => {
 
 
           {/* Preview Section */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-8">
+          <div className="bg-white/10 backdrop-blur-sm rounded-[2rem] border border-white/10 p-6 mb-8">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-white">Preview</h2>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">Preview</p>
+                <h2 className="mt-2 text-xl font-semibold text-white">Review the generated composition before export.</h2>
+              </div>
               <button
                 onClick={() => setIsEditing(!isEditing)}
-                className="px-4 py-2 bg-purple-600/20 hover:bg-purple-600/40 text-purple-300 rounded-lg text-sm font-medium transition-colors border border-purple-500/30 flex items-center gap-2"
+                className="px-4 py-2 bg-cyan-400/10 hover:bg-cyan-400/20 text-cyan-200 rounded-lg text-sm font-medium transition-colors border border-cyan-400/20 flex items-center gap-2"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -963,13 +1009,13 @@ const Home: NextPage = () => {
                   value={editPrompt}
                   onChange={(e) => setEditPrompt(e.target.value)}
                   placeholder="Describe your changes... (e.g., 'Make the intro shorter', 'Add a slide about space', 'Change background to blue')"
-                  className="flex-1 px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="flex-1 px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-400"
                   onKeyDown={(e) => e.key === "Enter" && handleEdit()}
                 />
                 <button
                   onClick={handleEdit}
                   disabled={isGenerating || !editPrompt.trim()}
-                  className="px-6 py-3 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-colors whitespace-nowrap flex items-center gap-2"
+                  className="px-6 py-3 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 font-medium rounded-xl transition-colors whitespace-nowrap flex items-center gap-2"
                 >
                   {isGenerating ? (
                     <>
@@ -1023,13 +1069,14 @@ const Home: NextPage = () => {
           </div>
 
           {/* Timeline Info */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl overflow-hidden mb-8 transition-all duration-300">
+          <div className="bg-white/10 backdrop-blur-sm rounded-[2rem] border border-white/10 overflow-hidden mb-8 transition-all duration-300">
             <button
               onClick={() => setIsTimelineExpanded(!isTimelineExpanded)}
               className="w-full p-6 flex items-center justify-between text-left hover:bg-white/5 transition-colors"
             >
               <h2 className="text-xl font-semibold text-white flex items-center gap-3">
-                <span>📋</span> Timeline: {timeline.title}
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-cyan-400/10 text-cyan-200">T</span>
+                Timeline: {timeline.title}
                 <span className="text-sm font-normal text-slate-400 bg-white/10 px-2 py-1 rounded-full">
                   {timeline.slides.length} slides
                 </span>
@@ -1051,9 +1098,9 @@ const Home: NextPage = () => {
                   <div
                     key={index}
                     onClick={() => seekToSlide(index)}
-                    className="group flex items-center gap-4 bg-black/20 p-3 rounded-xl border border-white/5 hover:border-purple-500/30 transition-all cursor-pointer hover:bg-black/30"
+                    className="group flex items-center gap-4 bg-black/20 p-3 rounded-xl border border-white/5 hover:border-cyan-400/30 transition-all cursor-pointer hover:bg-black/30"
                   >
-                    <span className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center text-xs font-medium text-slate-400 group-hover:bg-purple-500/20 group-hover:text-purple-300 transition-colors">
+                    <span className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center text-xs font-medium text-slate-400 group-hover:bg-cyan-400/20 group-hover:text-cyan-200 transition-colors">
                       {index + 1}
                     </span>
 
@@ -1119,9 +1166,10 @@ const Home: NextPage = () => {
 
 
           {/* Render Controls */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
-            <h2 className="text-xl font-semibold text-white mb-4">
-              Export Video
+          <div className="bg-white/10 backdrop-blur-sm rounded-[2rem] border border-white/10 p-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">Export</p>
+            <h2 className="mt-2 mb-4 text-xl font-semibold text-white">
+              Render the final video locally with Docker-friendly output paths.
             </h2>
             <LocalRenderControls
               compositionId={

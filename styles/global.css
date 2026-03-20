@@ -1,34 +1,34 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fff;
-  --foreground: #000;
-  --unfocused-border-color: #eaeaea;
-  --focused-border-color: #666;
+  --background: #08111f;
+  --foreground: #f5f7fb;
+  --unfocused-border-color: rgba(148, 163, 184, 0.24);
+  --focused-border-color: #67e8f9;
 
-  --button-disabled-color: #fafafa;
-  --disabled-text-color: #999;
+  --button-disabled-color: rgba(148, 163, 184, 0.1);
+  --disabled-text-color: #94a3b8;
 
-  --geist-border-radius: 5px;
+  --geist-border-radius: 14px;
   --geist-quarter-pad: 6px;
   --geist-half-pad: 12px;
   --geist-pad: 24px;
-  --geist-font: "Inter";
+  --geist-font: "Space Grotesk", "Avenir Next", "Segoe UI", sans-serif;
 
-  --geist-error: #e00;
+  --geist-error: #f87171;
 
-  --subtitle: #666;
+  --subtitle: #94a3b8;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #000000;
-    --unfocused-border-color: #333;
-    --focused-border-color: #888;
-    --foreground: #fff;
-    --button-disabled-color: #111;
-    --geist-error: red;
-    --subtitle: #8d8d8d;
+    --background: #08111f;
+    --unfocused-border-color: rgba(148, 163, 184, 0.24);
+    --focused-border-color: #67e8f9;
+    --foreground: #f5f7fb;
+    --button-disabled-color: rgba(148, 163, 184, 0.1);
+    --geist-error: #f87171;
+    --subtitle: #94a3b8;
   }
 }
 
@@ -59,4 +59,44 @@
       opacity: 0.15;
     }
   }
+}
+
+html {
+  background:
+    radial-gradient(circle at top, rgba(34, 211, 238, 0.18), transparent 28%),
+    radial-gradient(circle at 80% 10%, rgba(251, 146, 60, 0.12), transparent 22%),
+    linear-gradient(180deg, #040b16 0%, #08111f 55%, #050913 100%);
+}
+
+body {
+  min-height: 100vh;
+  background: transparent;
+  font-family: var(--geist-font);
+}
+
+::selection {
+  background: rgba(103, 232, 249, 0.3);
+  color: #f8fafc;
+}
+
+code {
+  font-family: "SFMono-Regular", "SF Mono", "Roboto Mono", Consolas, monospace;
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(103, 232, 249, 0.45) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(103, 232, 249, 0.35);
+  border-radius: 999px;
 }

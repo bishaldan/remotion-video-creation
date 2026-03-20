@@ -14,7 +14,7 @@ export const Input: React.FC<{
 
   return (
     <input
-      className="leading-[1.7] block w-full rounded-geist bg-background p-geist-half text-foreground text-sm border border-unfocused-border-color transition-colors duration-150 ease-in-out focus:border-focused-border-color outline-none"
+      className="block w-full rounded-geist border border-white/10 bg-slate-950/70 p-geist-half text-sm leading-[1.7] text-foreground outline-none transition-colors duration-150 ease-in-out focus:border-focused-border-color"
       disabled={disabled}
       name="title"
       value={text}

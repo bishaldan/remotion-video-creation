@@ -42,7 +42,6 @@ build
 .claude
 .cursor
 .gemini
-.github
 .opencode
 .opencode-agent
 .kiro
@@ -52,13 +51,11 @@ build
 out
 /out/
 
-# Ignore everything inside public/audio
-public/audio/*
-
-# Allow sfx
-!public/audio/default/
-
-# Typecast: un-ignore folder, ignore content, re-allow default
-!public/audio/typecast/default/
+# Generated media
+test-video*.mp4
+public/audio/kokoro/
+public/audio/typecast/
+public/audio/default/official-*/
+public/audio/default/solar-system-quiz-enhanced-v4_quiz_2026-02-11/
+public/audio/default/typecast-default/2026-02-17/
 /whisper.cpp/
-
